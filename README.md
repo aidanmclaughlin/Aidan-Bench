@@ -65,6 +65,48 @@ We also compare each model's Aidan Bench scores to its (input) token pricing:
 
 OpenAI's `GPT-4o-mini` and `Mistral Large 2` have outlier efficiency.
 
+## Setup
 
+### Prerequisites
 
+Ensure you have Python installed on your system. This project requires the following libraries:
 
+- numpy
+- openai
+- colorama
+- retry
+
+### Installation
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/aidanmclaughlin/Aidan-Bench.git
+   cd Aidan-Bench
+   ```
+
+2. Install the required libraries:
+   ```
+   pip install numpy openai colorama retry
+   ```
+
+3. Set up your OpenAI API key:
+   - Create an environment variable named `OPEN_ROUTER_KEY` with your OpenAI API key.
+
+### Running the Project
+
+To run the benchmark:
+
+```
+python main.py
+```
+
+This will execute the benchmark using the GPT-4 Turbo model in multithreaded mode.
+
+To modify the model or threading options, edit the function call at the end of `main.py`:
+
+```python:main.py
+startLine: 131
+endLine: 131
+```
+
+You can change the model name and set `multithreaded` to `False` for sequential processing.
