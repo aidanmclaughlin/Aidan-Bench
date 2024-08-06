@@ -1,4 +1,4 @@
-# Novel-Gen-Bench
+# Aidan Bench
 Some models feel competent despite under-scoring on benchmarks like MMLU, GPQA, MATH, or NIAH.
 
 *Aidan Bench* rewards models that:
