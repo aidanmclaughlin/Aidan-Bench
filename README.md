@@ -33,13 +33,13 @@ For each question, we generate answers until:
 
 We sum models' novelty score across questions. The novelty score is the sum of the maximum dissimilarity across many questions:
 
-![equation](https://latex.codecogs.com/png.latex?%5Ctext%7Bmax%5C_dissimilarity%7D%20%3D%201%20-%20%5Cmax_%7Be_i%20%5Cin%20E_%5Ctext%7Bprev%7D%7D%20%5Cfrac%7Be_%5Ctext%7Bnew%7D%20%5Ccdot%20e_i%7D%7B%5C%7Ce_%5Ctext%7Bnew%7D%5C%7C%20%5C%7Ce_i%5C%7C%7D)
+$$\text{max\_dissimilarity} = 1 - \max_{e_i \in E_\text{prev}} \frac{e_\text{new} \cdot e_i}{\|e_\text{new}\| \|e_i\|}$$
 
 where:
 
-- ![equation](https://latex.codecogs.com/png.latex?e_%5Ctext%7Bnew%7D): embedding vector of the new answer
-- ![equation](https://latex.codecogs.com/png.latex?E_%5Ctext%7Bprev%7D): set of embedding vectors for previous answers, ![equation](https://latex.codecogs.com/png.latex?%5C%7Be_1%2C%20e_2%2C%20...%2C%20e_n%5C%7D)
-- ![equation](https://latex.codecogs.com/png.latex?e_i): an individual embedding vector from ![equation](https://latex.codecogs.com/png.latex?E_%5Ctext%7Bprev%7D)
+- $e_\text{new}$: embedding vector of the new answer
+- $E_\text{prev}$: set of embedding vectors for previous answers, $\{e_1, e_2, ..., e_n\}$
+- $e_i$: an individual embedding vector from $E_\text{prev}$
 
 # Findings
 
