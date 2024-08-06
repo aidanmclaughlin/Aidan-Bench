@@ -1,12 +1,12 @@
 # Aidan Bench
 Some models feel competent despite under-scoring on benchmarks like MMLU, GPQA, MATH, or NIAH.
 
-*Aidan Bench* rewards models that:
+*Aidan Bench* rewards:
 
-1. Are creative
-2. Are reliable
-3. Attend to context
-4. Follow instructions
+1. Creativity
+2. Reliability
+3. Context attention
+4. Instruction following
 
 Aidan Bench's champions closely (but inexactly) match my intuition for the world's best LLMs. Topology uses Aidan Bench to gauge the quality of products like the CLM.
 
