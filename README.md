@@ -33,9 +33,9 @@ For each question, we generate answers until:
 
 We sum models' novelty score across questions. The novelty score is the sum of the maximum dissimilarity across many questions:
 
-\[
+$$
 \text{max\_dissimilarity} = 1 - \max_{e_i \in E_\text{prev}} \frac{e_\text{new} \cdot e_i}{\|e_\text{new}\| \|e_i\|}
-\]
+$$
 
 where:
 
