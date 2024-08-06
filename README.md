@@ -10,8 +10,6 @@ Some models feel competent despite under-scoring on benchmarks like MMLU, GPQA, 
 
 **Aidan Bench is weakly correlated with Lmsys, reveals poor GPT-4o performance, and surprisingly impressive Mistral Large 2 performance.**
 
-Aidan Bench's champions closely (but inexactly) match my intuition for the world's best LLMs. Topology uses Aidan Bench to gauge the quality of products like the CLM.
-
 # Methodology
 
 We give LLMs a set of open-ended questions like the following:
