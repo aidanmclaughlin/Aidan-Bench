@@ -5,8 +5,10 @@ Some models feel competent despite under-scoring on benchmarks like MMLU, GPQA, 
 
 1. Creativity
 2. Reliability
-3. Context attention
+3. Contextual attention
 4. Instruction following
+
+**Aidan Bench is weakly correlated with Lmsys, reveals poor GPT-4o performance, and surprisingly impressive Mistral Large 2 performance.**
 
 Aidan Bench's champions closely (but inexactly) match my intuition for the world's best LLMs. Topology uses Aidan Bench to gauge the quality of products like the CLM.
 
@@ -31,7 +33,7 @@ For each question, we generate answers until:
 1. An answer is clearly incoherent (as judged by another LLM)
 2. An answer is quite similar to one of its previous answers (as judged by an embedding model)
 
-We sum models' novelty score across questions. The novelty score is the sum of the maximum dissimilarity across many questions:
+We sum models' novelty scores across questions. The novelty score is the sum of the maximum dissimilarity across many questions:
 
 $$
 \text{max}\text{-}\text{dissimilarity} = 1 - \max_{e_i \in E_\text{prev}} \frac{e_\text{new} \cdot e_i}{\|e_\text{new}\| \|e_i\|}
