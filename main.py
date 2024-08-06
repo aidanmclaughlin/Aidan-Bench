@@ -5,6 +5,14 @@ from colorama import Fore, Style
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+import argparse
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Benchmark a language model.")
+    parser.add_argument("model_name", type=str, help="Name of the model to benchmark")
+    parser.add_argument("--single-threaded", action="store_true", help="Run in single-threaded mode")
+    return parser.parse_args()
 
 
 def benchmark_model(model_name, multithreaded=False):
@@ -128,4 +136,6 @@ def benchmark_model_sequential(model_name):
     return novelty_score
 
 
-benchmark_model("openai/gpt-4-turbo", multithreaded=True)
+if __name__ == "__main__":
+    args = parse_arguments()
+    benchmark_model(args.model_name, multithreaded=not args.single_threaded)

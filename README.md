@@ -89,24 +89,41 @@ Ensure you have Python installed on your system. This project requires the follo
    pip install numpy openai colorama retry
    ```
 
-3. Set up your OpenAI API key:
-   - Create an environment variable named `OPEN_ROUTER_KEY` with your OpenAI API key.
+3. Set up your API keys:
+   - Create an environment variable named `OPEN_ROUTER_KEY` with your OpenRouter API key.
+   - Create an environment variable named `OPENAI_API_KEY` with your OpenAI API key.
 
 ### Running the Project
 
 To run the benchmark:
 
 ```
-python main.py
+python main.py <model_name> [--multithreaded]
 ```
 
-This will execute the benchmark using the GPT-4 Turbo model in multithreaded mode.
+Arguments:
+- `<model_name>`: (Required) Name of the model to benchmark
+- `--multithreaded`: (Optional) Run in multithreaded mode
 
-To modify the model or threading options, edit the function call at the end of `main.py`:
+Examples:
 
-```python:main.py
-startLine: 131
-endLine: 131
-```
+1. To run the benchmark for GPT-4 Turbo in single-threaded mode:
+   ```
+   python main.py openai/gpt-4-turbo
+   ```
 
-You can change the model name and set `multithreaded` to `False` for sequential processing.
+2. To run the benchmark for Claude 3 Sonnet in multithreaded mode:
+   ```
+   python main.py anthropic/claude-3-sonnet --multithreaded
+   ```
+
+The script will execute the benchmark using the specified model and threading option.
+
+### API Keys
+
+This project requires two different API keys:
+
+1. OpenRouter API key: Used for chat completions with various models.
+2. OpenAI API key: Used for embedding text.
+
+Make sure both keys are set up as environment variables before running the project.
