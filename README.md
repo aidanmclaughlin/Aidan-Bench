@@ -98,26 +98,26 @@ Ensure you have Python installed on your system. This project requires the follo
 To run the benchmark:
 
 ```
-python main.py <model_name> [--multithreaded]
+python main.py <model_name> [--single-threaded]
 ```
 
 Arguments:
 - `<model_name>`: (Required) Name of the model to benchmark
-- `--multithreaded`: (Optional) Run in multithreaded mode
+- `--single-threaded`: (Optional) Run in single-threaded mode
 
 Examples:
 
-1. To run the benchmark for GPT-4 Turbo in single-threaded mode:
+1. To run the benchmark for GPT-4 Turbo in multithreaded mode (default):
    ```
    python main.py openai/gpt-4-turbo
    ```
 
-2. To run the benchmark for Claude 3 Sonnet in multithreaded mode:
+2. To run the benchmark for Claude 3 Sonnet in single-threaded mode:
    ```
-   python main.py anthropic/claude-3-sonnet --multithreaded
+   python main.py anthropic/claude-3-sonnet --single-threaded
    ```
 
-The script will execute the benchmark using the specified model and threading option.
+The script will execute the benchmark using the specified model and threading option. By default, the benchmark runs in multithreaded mode unless the `--single-threaded` flag is provided.
 
 ### API Keys
 
