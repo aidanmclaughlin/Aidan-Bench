@@ -8,7 +8,7 @@ Some models feel competent despite under-scoring on benchmarks like MMLU, GPQA, 
 3. Attend to context
 4. Follow instructions
 
-Aidan Bench’s champions closely (but inexactly) match my intuition for the world’s best LLMs. Topology uses Aidan Bench to gauge the quality of products like the CLM.
+Aidan Bench's champions closely (but inexactly) match my intuition for the world's best LLMs. Topology uses Aidan Bench to gauge the quality of products like the CLM.
 
 # Methodology
 
@@ -31,36 +31,34 @@ For each question, we generate answers until:
 1. An answer is clearly incoherent (as judged by another LLM)
 2. An answer is quite similar to one of its previous answers (as judged by an embedding model)
 
-We sum models’ novelty score across questions. The novelty score is the sum of the maximum dissimilarity across many questions:
+We sum models' novelty score across questions. The novelty score is the sum of the maximum dissimilarity across many questions:
 
-$$
-\text{max\_dissimilarity} = 1 - \max_{e_i \in E_\text{prev}} \frac{e_\text{new} \cdot e_i}{\|e_\text{new}\| \|e_i\|}
-$$
+![equation](https://latex.codecogs.com/png.latex?%5Ctext%7Bmax%5C_dissimilarity%7D%20%3D%201%20-%20%5Cmax_%7Be_i%20%5Cin%20E_%5Ctext%7Bprev%7D%7D%20%5Cfrac%7Be_%5Ctext%7Bnew%7D%20%5Ccdot%20e_i%7D%7B%5C%7Ce_%5Ctext%7Bnew%7D%5C%7C%20%5C%7Ce_i%5C%7C%7D)
 
 where:
 
-- $e_\text{new}$: embedding vector of the new answer
-- $E_\text{prev}$: set of embedding vectors for previous answers, $\{e_1, e_2, ..., e_n\}$
-- $e_i$: an individual embedding vector from $E_\text{prev}$
+- ![equation](https://latex.codecogs.com/png.latex?e_%5Ctext%7Bnew%7D): embedding vector of the new answer
+- ![equation](https://latex.codecogs.com/png.latex?E_%5Ctext%7Bprev%7D): set of embedding vectors for previous answers, ![equation](https://latex.codecogs.com/png.latex?%5C%7Be_1%2C%20e_2%2C%20...%2C%20e_n%5C%7D)
+- ![equation](https://latex.codecogs.com/png.latex?e_i): an individual embedding vector from ![equation](https://latex.codecogs.com/png.latex?E_%5Ctext%7Bprev%7D)
 
 # Findings
 
 Here are the final novelty scores across models:
 
-![output-4.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8d5858df-1063-4797-a4e7-227579d3406e/66390384-f031-49b1-be38-331a25f8046a/output-4.png)
+![Novelty scores across models](output-4.png)
 
 Notable results:
 
 1. `Mistral Large 2` wins this benchmark, scoring 25% higher than `Claude 3.5 Sonnet`, the runner-up.
-2. OpenAI’s `GPT-4o` underperforms similarly priced models substantially, including its cheaper sibling, `GPT-4o-mini`.
-3. OpenAI’s `GPT-4o-mini` punches well above its price class, rivaling much more expensive models like `Llama 3.1 405b`.
+2. OpenAI's `GPT-4o` underperforms similarly priced models substantially, including its cheaper sibling, `GPT-4o-mini`.
+3. OpenAI's `GPT-4o-mini` punches well above its price class, rivaling much more expensive models like `Llama 3.1 405b`.
 
-We also include a comparison between Aidan Bench scores and Lmsys scores. Notably, there’s a weak correlation between these benchmarks ($r=0.188$).
+We also include a comparison between Aidan Bench scores and Lmsys scores. Notably, there's a weak correlation between these benchmarks (r=0.188).
 
-![output-5.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8d5858df-1063-4797-a4e7-227579d3406e/fcfd0de0-6381-462c-9c62-f9a70530bc71/output-5.png)
+![Comparison of Aidan Bench and Lmsys scores](output-5.png)
 
-We also compare each model’s Aidan Bench scores to its (input) token pricing:
+We also compare each model's Aidan Bench scores to its (input) token pricing:
 
-![output-7.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/8d5858df-1063-4797-a4e7-227579d3406e/0815f5b7-aa64-434e-97d9-f37f3e511451/output-7.png)
+![Comparison of Aidan Bench scores and token pricing](output-7.png)
 
-OpenAI’s `GPT-4o-mini` and `Mistral Large 2` have outlier efficiency.
+OpenAI's `GPT-4o-mini` and `Mistral Large 2` have outlier efficiency.
