@@ -47,7 +47,7 @@ where:
 
 Here are the final novelty scores across models:
 
-![Novelty scores across models](output-4.png)
+![Novelty scores across models](aidan-bench-scores.png)
 
 Notable results:
 
@@ -57,11 +57,11 @@ Notable results:
 
 We also include a comparison between Aidan Bench scores and Lmsys scores. Notably, there's a weak correlation between these benchmarks (r=0.188).
 
-![Comparison of Aidan Bench and Lmsys scores](output-5.png)
+![Comparison of Aidan Bench and Lmsys scores](aidan-bench-vs-lmsys.png)
 
 We also compare each model's Aidan Bench scores to its (input) token pricing:
 
-![Comparison of Aidan Bench scores and token pricing](output-7.png)
+![Comparison of Aidan Bench scores and token pricing](aidan-bench-vs-price.png)
 
 OpenAI's `GPT-4o-mini` and `Mistral Large 2` have outlier efficiency.
 
