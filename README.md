@@ -57,11 +57,11 @@ Notable results:
 
 We also include a comparison between Aidan Bench scores and Lmsys scores. Notably, there's a weak correlation between these benchmarks (r=0.188).
 
-![Comparison of Aidan Bench and Lmsys scores](aidan-bench-vs-lmsys.png)
+![Comparison of Aidan Bench and Lmsys scores](lmsys-compairson.png)
 
 We also compare each model's Aidan Bench scores to its (input) token pricing:
 
-![Comparison of Aidan Bench scores and token pricing](aidan-bench-vs-price.png)
+![Comparison of Aidan Bench scores and token pricing](price-graph.png)
 
 OpenAI's `GPT-4o-mini` and `Mistral Large 2` have outlier efficiency.
 
