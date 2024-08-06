@@ -33,13 +33,15 @@ For each question, we generate answers until:
 
 We sum models' novelty score across questions. The novelty score is the sum of the maximum dissimilarity across many questions:
 
-$$\text{max\_dissimilarity} = 1 - \max_{e_i \in E_\text{prev}} \frac{e_\text{new} \cdot e_i}{\|e_\text{new}\| \|e_i\|}$$
+\[
+\text{max\_dissimilarity} = 1 - \max_{e_i \in E_\text{prev}} \frac{e_\text{new} \cdot e_i}{\|e_\text{new}\| \|e_i\|}
+\]
 
 where:
 
-- $e_\text{new}$: embedding vector of the new answer
-- $E_\text{prev}$: set of embedding vectors for previous answers, $\{e_1, e_2, ..., e_n\}$
-- $e_i$: an individual embedding vector from $E_\text{prev}$
+- \(e_\text{new}\): embedding vector of the new answer
+- \(E_\text{prev}\): set of embedding vectors for previous answers, \(\{e_1, e_2, ..., e_n\}\)
+- \(e_i\): an individual embedding vector from \(E_\text{prev}\)
 
 # Findings
 
@@ -62,3 +64,7 @@ We also compare each model's Aidan Bench scores to its (input) token pricing:
 ![Comparison of Aidan Bench scores and token pricing](output-7.png)
 
 OpenAI's `GPT-4o-mini` and `Mistral Large 2` have outlier efficiency.
+
+
+
+
