@@ -64,7 +64,7 @@ extended_questions = [
 ]
 
 # if you want an extended evaluation
-if extended:
+if extended_eval:
     questions += extended_questions
 
 
