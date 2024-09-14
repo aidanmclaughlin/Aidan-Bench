@@ -8,7 +8,7 @@ Some models feel competent despite under-scoring on benchmarks like MMLU, GPQA, 
 3. Contextual attention
 4. Instruction following
 
-**Aidan Bench is weakly correlated with Lmsys, has no score ceiling, and aligns with real-world open-ended mode use.**
+**Aidan Bench is weakly correlated with Lmsys, has no score ceiling, and aligns with real-world open-ended use.**
 
 # Methodology
 
