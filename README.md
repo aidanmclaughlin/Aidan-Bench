@@ -47,7 +47,7 @@ where:
 
 Here are the summed novelty scores across models:
 
-![Novelty scores across models](aidan_bench_scores.png)
+![Novelty scores across models](aidan_bench_results.png)
 
 We average scores across 5 runs at temperature=0.7 (and default temperature for `claude-3.5-sonnet` and `o1-mini`).
 
