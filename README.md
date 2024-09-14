@@ -104,12 +104,3 @@ Examples:
    ```
 
 The script will execute the benchmark using the specified model and threading option. By default, the benchmark runs in multithreaded mode unless the `--single-threaded` flag is provided.
-
-### API Keys
-
-This project requires two different API keys:
-
-1. OpenRouter API key: Used for chat completions with various models.
-2. OpenAI API key: Used for embedding text.
-
-Make sure both keys are set up as environment variables before running the project.
