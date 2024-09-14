@@ -1,4 +1,4 @@
-# Aidan Bench
+<img width="1512" alt="aidan_bench_results" src="https://github.com/user-attachments/assets/7a12b604-b26e-4b5f-98c3-f70d8618dd98"><img width="1512" alt="aidan_bench_results" src="https://github.com/user-attachments/assets/450f7cda-20b4-445d-8281-58471ecbd135"># Aidan Bench
 Some models feel competent despite under-scoring on benchmarks like MMLU, GPQA, MATH, or NIAH.
 
 *Aidan Bench* rewards:
@@ -8,7 +8,7 @@ Some models feel competent despite under-scoring on benchmarks like MMLU, GPQA, 
 3. Contextual attention
 4. Instruction following
 
-**Aidan Bench is weakly correlated with Lmsys, reveals poor GPT-4o performance, and surprisingly impressive Mistral Large 2 performance.**
+**Aidan Bench is weakly correlated with Lmsys, has no score ceiling, and aligns with real-world open-ended mode use.**
 
 # Methodology
 
@@ -45,25 +45,11 @@ where:
 
 # Findings
 
-Here are the final novelty scores across models:
+Here are the summed novelty scores across models:
 
-![Novelty scores across models](aidan-bench-scores.png)
+![Novelty scores across models](aidan_bench_scores.png)
 
-Notable results:
-
-1. `Mistral Large 2` wins this benchmark, scoring 25% higher than `Claude 3.5 Sonnet`, the runner-up.
-2. OpenAI's `GPT-4o` underperforms similarly priced models substantially, including its cheaper sibling, `GPT-4o-mini`.
-3. OpenAI's `GPT-4o-mini` punches well above its price class, rivaling much more expensive models like `Llama 3.1 405b`.
-
-We also include a comparison between Aidan Bench scores and Lmsys scores. Notably, there's a weak correlation between these benchmarks (r=0.188).
-
-![Comparison of Aidan Bench and Lmsys scores](lmsys-compairson.png)
-
-We also compare each model's Aidan Bench scores to its (input) token pricing:
-
-![Comparison of Aidan Bench scores and token pricing](price-graph.png)
-
-OpenAI's `GPT-4o-mini` and `Mistral Large 2` have outlier efficiency.
+We average scores across 5 runs at temperature=0.7 (and default temperature for `claude-3.5-sonnet and `o1-mini`).
 
 ## Setup
 
