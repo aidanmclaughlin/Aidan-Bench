@@ -1,4 +1,4 @@
-<img width="1512" alt="aidan_bench_results" src="https://github.com/user-attachments/assets/7a12b604-b26e-4b5f-98c3-f70d8618dd98"><img width="1512" alt="aidan_bench_results" src="https://github.com/user-attachments/assets/450f7cda-20b4-445d-8281-58471ecbd135"># Aidan Bench
+# Aidan Bench
 Some models feel competent despite under-scoring on benchmarks like MMLU, GPQA, MATH, or NIAH.
 
 *Aidan Bench* rewards:
