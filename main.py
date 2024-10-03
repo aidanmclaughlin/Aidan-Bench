@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import csv
 from collections import defaultdict
 import traceback
+import json  # Added import for JSON handling
 
 
 def parse_arguments():
@@ -34,6 +35,7 @@ def process_question(question, model_name, temperature):
     print(Fore.RED + question + Style.RESET_ALL)
     previous_answers = []
     question_novelty = 0
+    question_data = []  # List to store data per answer
 
     try:
         while True:
@@ -78,6 +80,14 @@ def process_question(question, model_name, temperature):
             previous_answers.append(new_answer)
             question_novelty += novelty_score
 
+            # Collect data for each answer
+            question_data.append({
+                'question': question,
+                'answer': new_answer,
+                'coherence_score': coherence_score,
+                'novelty_score': novelty_score
+            })
+
     except Exception as e:
         print(
             Fore.RED + f"Unexpected error processing question: {str(e)}" + Style.RESET_ALL)
@@ -89,7 +99,7 @@ def process_question(question, model_name, temperature):
     print(f"Time taken: {time_taken} seconds")
     print(Style.RESET_ALL)
 
-    return question_novelty
+    return question_novelty, question_data  # Return collected data
 
 
 def get_novelty_score(new_answer: str, previous_answers: list):
@@ -116,6 +126,7 @@ def get_novelty_score(new_answer: str, previous_answers: list):
 def benchmark_model_multithreaded(model_name, temperature):
     novelty_score = 0
     print_lock = threading.Lock()
+    all_question_data = []  # List to store data from all questions
 
     with ThreadPoolExecutor(max_workers=len(questions)) as executor:
         future_to_question = {executor.submit(
@@ -124,27 +135,48 @@ def benchmark_model_multithreaded(model_name, temperature):
         for future in as_completed(future_to_question):
             question = future_to_question[future]
 
-            question_novelty = future.result()
-            with print_lock:
-                novelty_score += question_novelty
+            try:
+                question_novelty, question_data = future.result()
+                with print_lock:
+                    novelty_score += question_novelty
+                    all_question_data.extend(question_data)
+            except Exception as e:
+                print(
+                    Fore.RED + f"Error processing question '{question}': {str(e)}" + Style.RESET_ALL)
+                print(Fore.RED + traceback.format_exc() + Style.RESET_ALL)
 
     print(Fore.YELLOW)
     print(f"Total novelty score across all questions: {novelty_score}")
     print(Style.RESET_ALL)
+
+    # Save all collected data to a JSON file
+    filename = f'benchmark_{model_name}_{int(time.time())}.json'
+    with open(filename, 'w') as f:
+        json.dump(all_question_data, f, indent=2)
+    print(f"{Fore.YELLOW}Saved detailed results to {filename}{Style.RESET_ALL}")
 
     return novelty_score
 
 
 def benchmark_model_sequential(model_name, temperature):
     novelty_score = 0
+    all_question_data = []  # List to store data from all questions
 
     for question in questions:
-        question_novelty = process_question(question, model_name, temperature)
+        question_novelty, question_data = process_question(
+            question, model_name, temperature)
         novelty_score += question_novelty
+        all_question_data.extend(question_data)
 
     print(Fore.YELLOW)
     print(f"Total novelty score across all questions: {novelty_score}")
     print(Style.RESET_ALL)
+
+    # Save all collected data to a JSON file
+    filename = f'benchmark_{model_name}_{int(time.time())}.json'
+    with open(filename, 'w') as f:
+        json.dump(all_question_data, f, indent=2)
+    print(f"{Fore.YELLOW}Saved detailed results to {filename}{Style.RESET_ALL}")
 
     return novelty_score
 
@@ -157,11 +189,13 @@ def run_multiple_benchmarks(model_name, multithreaded=False):
     existing_data = read_existing_csv(csv_filename)
 
     # Determine missing temperatures for the model
-    missing_temps = get_missing_temperatures(existing_data, model_name, temperatures)
+    missing_temps = get_missing_temperatures(
+        existing_data, model_name, temperatures)
 
     # If all temperatures are present, print a message and return
     if not missing_temps:
-        print(f"{Fore.YELLOW}All temperatures already benchmarked for {model_name}. No new runs needed.{Style.RESET_ALL}")
+        print(
+            f"{Fore.YELLOW}All temperatures already benchmarked for {model_name}. No new runs needed.{Style.RESET_ALL}")
         return
 
     # Create CSV file if it doesn't exist and write header
@@ -175,19 +209,24 @@ def run_multiple_benchmarks(model_name, multithreaded=False):
     results = existing_data.get(model_name, [None] * len(temperatures))
 
     for temp in missing_temps:
-        print(f"\n{Fore.CYAN}Running benchmark with temperature {temp}{Style.RESET_ALL}")
+        print(
+            f"\n{Fore.CYAN}Running benchmark with temperature {temp}{Style.RESET_ALL}")
         try:
-            score = benchmark_model(model_name, multithreaded, temperature=temp)
-            print(f"{Fore.GREEN}Run completed with temperature {temp} and score: {score}{Style.RESET_ALL}")
+            score = benchmark_model(
+                model_name, multithreaded, temperature=temp)
+            print(
+                f"{Fore.GREEN}Run completed with temperature {temp} and score: {score}{Style.RESET_ALL}")
             results[temperatures.index(temp)] = score
         except Exception as e:
-            print(f"{Fore.RED}Error in run with temperature {temp}: {str(e)}{Style.RESET_ALL}")
+            print(
+                f"{Fore.RED}Error in run with temperature {temp}: {str(e)}{Style.RESET_ALL}")
             results[temperatures.index(temp)] = f"ERROR: {str(e)}"
 
         # Update CSV file after each temperature run
         update_csv_file(csv_filename, model_name, results)
 
-    print(f"{Fore.YELLOW}All runs completed. Results saved to {csv_filename}{Style.RESET_ALL}")
+    print(
+        f"{Fore.YELLOW}All runs completed. Results saved to {csv_filename}{Style.RESET_ALL}")
 
 
 def read_existing_csv(filename):
