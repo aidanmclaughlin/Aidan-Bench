@@ -151,7 +151,7 @@ def benchmark_model_multithreaded(model_name, temperature):
     print(Style.RESET_ALL)
 
     # Save all collected data to a JSON file
-    filename = f'benchmark_{model_name}_{int(time.time())}.json'
+    filename = f'benchmark_{model_name.replace("/", "-")}_{int(time.time())}.json'
     with open(filename, 'w') as f:
         json.dump(all_question_data, f, indent=2)
     print(f"{Fore.YELLOW}Saved detailed results to {filename}{Style.RESET_ALL}")
