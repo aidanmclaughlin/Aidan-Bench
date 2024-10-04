@@ -68,11 +68,12 @@ def process_question(question, model_name, temperature):
 
             novelty_score = get_novelty_score(new_answer, previous_answers)
 
-            if novelty_score < 0.1:
+            if novelty_score < 0.2:
                 print(
                     Fore.YELLOW + "Output is redundant. Moving to next question." + Style.RESET_ALL)
                 break
 
+            print(f"Question:\n{question}")
             print(f"New Answer:\n{new_answer}")
             print(Fore.GREEN + f"Coherence Score: {coherence_score}")
             print(f"Novelty Score: {novelty_score}" + Style.RESET_ALL)

@@ -50,38 +50,85 @@ def create_gen_prompt(question: str, previous_answers: list) -> str:
     return prompt
 
 
+# def create_judge_prompt(question: str, answer: str):
+#     prompt = f"""    Your task is to evaluate the coherence and plausibility of an answer to a given question. This involves assessing whether the answer makes sense and isn't nonsensical or implausible.
+
+#     Question: <question>{question}</question>
+#     Answer: <answer>{answer}</answer>
+
+#     Evaluation process:
+#     1. Understand the question: Analyze what the question is asking.
+#     2. Assess the answer: Determine if the answer is coherent and plausible.
+#     3. Check for nonsensical elements: Identify any aspects that are completely unrelated or absurd.
+
+#     Please think through each step carefully and show your reasoning:
+
+#     1. Question analysis:
+#     [Your brief analysis of the question here]
+
+#     2. Answer assessment:
+#     [Evaluate if the answer is coherent and plausible]
+
+#     3. Nonsensical check:
+#     [Identify any completely unrelated or absurd elements]
+
+#     Based on your analysis, provide a final Coherence and Plausibility Score on a scale of 1 - 10, where:
+#     1-3: Incoherent, implausible, or nonsensical
+#     4-6: Partially coherent and plausible, but with some issues
+#     7-8: Mostly coherent and plausible with minor issues
+#     9-10: Highly coherent and plausible
+
+#     Ensure that nonsensical or completely implausible answers receive very low scores (1-3).
+
+#     IMPORTANT: After your reasoning, you must provide your final Coherence and Plausibility Score as a single integer between 1 and 10, enclosed in <coherence_score></coherence_score> XML tags. For example:
+#     <coherence_score>7</coherence_score>
+
+#     Your response must end with this score in the specified format.
+#     """
+#     return prompt
+
+
 def create_judge_prompt(question: str, answer: str):
-    prompt = f"""    Your task is to evaluate the coherence and plausibility of an answer to a given question. This involves assessing whether the answer makes sense and isn't nonsensical or implausible.
+    prompt = f"""
+    Your task is to evaluate the quality of an answer to a given question. This involves assessing the answer's accuracy, completeness, relevance, and overall helpfulness.
 
     Question: <question>{question}</question>
     Answer: <answer>{answer}</answer>
 
     Evaluation process:
-    1. Understand the question: Analyze what the question is asking.
-    2. Assess the answer: Determine if the answer is coherent and plausible.
-    3. Check for nonsensical elements: Identify any aspects that are completely unrelated or absurd.
+    1. Understand the question: Analyze what the question is asking and identify its key components.
+    2. Assess answer accuracy: Determine if the information provided is correct and factual.
+    3. Evaluate completeness: Check if the answer addresses all aspects of the question.
+    4. Judge relevance: Assess how well the answer relates to the specific question asked.
+    5. Consider helpfulness: Determine if the answer provides valuable information or insights to the asker.
 
     Please think through each step carefully and show your reasoning:
 
     1. Question analysis:
     [Your brief analysis of the question here]
 
-    2. Answer assessment:
-    [Evaluate if the answer is coherent and plausible]
+    2. Accuracy assessment:
+    [Evaluate the factual correctness of the answer]
 
-    3. Nonsensical check:
-    [Identify any completely unrelated or absurd elements]
+    3. Completeness evaluation:
+    [Assess if all aspects of the question are addressed]
 
-    Based on your analysis, provide a final Coherence and Plausibility Score on a scale of 1 - 10, where:
-    1-3: Incoherent, implausible, or nonsensical
-    4-6: Partially coherent and plausible, but with some issues
-    7-8: Mostly coherent and plausible with minor issues
-    9-10: Highly coherent and plausible
+    4. Relevance judgment:
+    [Determine how well the answer relates to the question]
 
-    Ensure that nonsensical or completely implausible answers receive very low scores (1-3).
+    5. Helpfulness consideration:
+    [Assess the overall value and usefulness of the answer]
 
-    IMPORTANT: After your reasoning, you must provide your final Coherence and Plausibility Score as a single integer between 1 and 10, enclosed in <coherence_score></coherence_score> XML tags. For example:
-    <coherence_score>7</coherence_score>
+    Based on your analysis, provide a final Quality Score on a scale of 1 - 10, where:
+    1-3: Poor quality (inaccurate, incomplete, irrelevant, or unhelpful)
+    4-6: Moderate quality (partially accurate and helpful, but with significant room for improvement)
+    7-8: Good quality (mostly accurate, complete, relevant, and helpful with minor issues)
+    9-10: Excellent quality (highly accurate, comprehensive, relevant, and exceptionally helpful)
+
+    Ensure that answers with major inaccuracies or those that fail to address the question receive very low scores (1-3).
+
+    IMPORTANT: After your reasoning, you must provide your final Quality Score as a single integer between 1 and 10, enclosed in <quality_score></quality_score> XML tags. For example:
+    <quality_score>8</quality_score>
 
     Your response must end with this score in the specified format.
     """
