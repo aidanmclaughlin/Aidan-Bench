@@ -58,8 +58,7 @@ def process_question(question, model_name, temperature):
                     Fore.RED + f"Error getting judge response: {str(e)}" + Style.RESET_ALL)
                 break
 
-            coherence_score = int(judge_response.split("<coherence_score>")[
-                1].split("</coherence_score>")[0])
+            coherence_score = int(judge_response.split("<coherence_score>")[1].split("</coherence_score>")[0])
 
             if coherence_score <= 3:
                 print(
@@ -68,7 +67,7 @@ def process_question(question, model_name, temperature):
 
             novelty_score = get_novelty_score(new_answer, previous_answers)
 
-            if novelty_score < 0.2:
+            if novelty_score < 0.1:
                 print(
                     Fore.YELLOW + "Output is redundant. Moving to next question." + Style.RESET_ALL)
                 break
@@ -182,53 +181,6 @@ def benchmark_model_sequential(model_name, temperature):
     return novelty_score
 
 
-def run_multiple_benchmarks(model_name, multithreaded=False):
-    temperatures = [0, 0.2, 0.4, 0.6, 0.8, 1.0]
-    csv_filename = "benchmark_results.csv"
-
-    # Read existing CSV data
-    existing_data = read_existing_csv(csv_filename)
-
-    # Determine missing temperatures for the model
-    missing_temps = get_missing_temperatures(
-        existing_data, model_name, temperatures)
-
-    # If all temperatures are present, print a message and return
-    if not missing_temps:
-        print(
-            f"{Fore.YELLOW}All temperatures already benchmarked for {model_name}. No new runs needed.{Style.RESET_ALL}")
-        return
-
-    # Create CSV file if it doesn't exist and write header
-    if not existing_data:
-        with open(csv_filename, "w", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            header = ["Model"] + [f"Temp {temp}" for temp in temperatures]
-            writer.writerow(header)
-
-    # Load existing results for the model
-    results = existing_data.get(model_name, [None] * len(temperatures))
-
-    for temp in missing_temps:
-        print(
-            f"\n{Fore.CYAN}Running benchmark with temperature {temp}{Style.RESET_ALL}")
-        try:
-            score = benchmark_model(
-                model_name, multithreaded, temperature=temp)
-            print(
-                f"{Fore.GREEN}Run completed with temperature {temp} and score: {score}{Style.RESET_ALL}")
-            results[temperatures.index(temp)] = score
-        except Exception as e:
-            print(
-                f"{Fore.RED}Error in run with temperature {temp}: {str(e)}{Style.RESET_ALL}")
-            results[temperatures.index(temp)] = f"ERROR: {str(e)}"
-
-        # Update CSV file after each temperature run
-        update_csv_file(csv_filename, model_name, results)
-
-    print(
-        f"{Fore.YELLOW}All runs completed. Results saved to {csv_filename}{Style.RESET_ALL}")
-
 
 def read_existing_csv(filename):
     try:
@@ -240,38 +192,8 @@ def read_existing_csv(filename):
         return {}
 
 
-def get_missing_temperatures(existing_data, model_name, temperatures):
-    if model_name not in existing_data:
-        return temperatures
-    existing_temps = existing_data[model_name]
-    missing_temps = []
-    for i, temp in enumerate(temperatures):
-        if i >= len(existing_temps) or not existing_temps[i] or existing_temps[i] == "None":
-            missing_temps.append(temp)
-    return missing_temps
-
-
-def update_csv_file(filename, model_name, scores):
-    # Read existing data
-    existing_data = defaultdict(list)
-    with open(filename, "r", newline="") as csvfile:
-        reader = csv.reader(csvfile)
-        header = next(reader)
-        for row in reader:
-            existing_data[row[0]] = row[1:]
-
-    # Update data for the current model
-    existing_data[model_name] = scores
-
-    # Write updated data back to CSV
-    with open(filename, "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(header)
-        for model, model_scores in existing_data.items():
-            writer.writerow([model] + model_scores)
-
 
 if __name__ == "__main__":
     args = parse_arguments()
-    run_multiple_benchmarks(
-        args.model_name, multithreaded=not args.single_threaded)
+    benchmark_model(
+        args.model_name, multithreaded=not args.single_threaded, temperature=0.7)
