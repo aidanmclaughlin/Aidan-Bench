@@ -8,7 +8,7 @@ Some models feel competent despite under-scoring on benchmarks like MMLU, GPQA, 
 3. Contextual attention
 4. Instruction following
 
-**Aidan Bench is weakly correlated with Lmsys, reveals poor GPT-4o performance, and surprisingly impressive Mistral Large 2 performance.**
+**Aidan Bench is weakly correlated with Lmsys, has no score ceiling, and aligns with real-world open-ended use.**
 
 # Methodology
 
@@ -45,25 +45,11 @@ where:
 
 # Findings
 
-Here are the final novelty scores across models:
+Here are the summed novelty scores across models:
 
-![Novelty scores across models](aidan-bench-scores.png)
+![Novelty scores across models](aidan_bench_results.png)
 
-Notable results:
-
-1. `Mistral Large 2` wins this benchmark, scoring 25% higher than `Claude 3.5 Sonnet`, the runner-up.
-2. OpenAI's `GPT-4o` underperforms similarly priced models substantially, including its cheaper sibling, `GPT-4o-mini`.
-3. OpenAI's `GPT-4o-mini` punches well above its price class, rivaling much more expensive models like `Llama 3.1 405b`.
-
-We also include a comparison between Aidan Bench scores and Lmsys scores. Notably, there's a weak correlation between these benchmarks (r=0.188).
-
-![Comparison of Aidan Bench and Lmsys scores](lmsys-compairson.png)
-
-We also compare each model's Aidan Bench scores to its (input) token pricing:
-
-![Comparison of Aidan Bench scores and token pricing](price-graph.png)
-
-OpenAI's `GPT-4o-mini` and `Mistral Large 2` have outlier efficiency.
+We average scores across 5 runs at temperature=0.7 (and default temperature for `claude-3.5-sonnet` and `o1-mini`).
 
 ## Setup
 
@@ -118,12 +104,3 @@ Examples:
    ```
 
 The script will execute the benchmark using the specified model and threading option. By default, the benchmark runs in multithreaded mode unless the `--single-threaded` flag is provided.
-
-### API Keys
-
-This project requires two different API keys:
-
-1. OpenRouter API key: Used for chat completions with various models.
-2. OpenAI API key: Used for embedding text.
-
-Make sure both keys are set up as environment variables before running the project.
