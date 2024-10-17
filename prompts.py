@@ -1,5 +1,6 @@
 
-# Questions should be open-ended but demand concrete answers."
+extended_eval = False
+
 questions = [
     (1, "Provide an explanation for Japan's Lost Decades."),
     (2, "What is a cause of World War 1?"),
@@ -27,6 +28,44 @@ questions = [
     (24, "Invent a new musical instrument and describe how it would be played."),
     (25, "What might be an unexpected solution to reducing plastic waste in oceans?"),
 ]
+
+extended_questions = [
+    # Creative and unexpected questions - generated from the base.
+    "How might we design a city that functions entirely underwater?",
+    "What societal changes might occur if humans could communicate with animals?",
+    "Propose a non-military use for a fleet of drones.",
+    "Describe a sustainable farming method that could be used in a floating city.",
+    "If all buildings were required to be bio-luminescent, what effects might this have?",
+    "Invent a device that translates dreams into tangible art.",
+    "How might daily life change if humans had the ability to breathe underwater?",
+    "Create a recipe for a 'happiness-inducing' smoothie.",
+    "What new environmental challenges might arise if all vehicles were self-driving?",
+    "Design a fashion line that incorporates smart clothing technology.",
+    "Imagine a world where books are replaced by holographic storytelling; what impacts might this have?",
+    "What might be the implications of having robots as therapists?",
+    "Propose a system for energy-harvesting from natural disasters.",
+    "How might the education system be revolutionized by virtual reality classrooms?",
+    "What unique challenges might arise in a society where everyone lives to be 150 years old?",
+    "Describe a mobile app that encourages acts of kindness.",
+    "If people could naturally hibernate, what would be the societal and economic impacts?",
+    "Imagine a competition where contestants build habitats for animals; what might be included?",
+    "What might be the benefits of reintroducing dinosaurs into modern ecosystems?",
+    "Propose a mechanism for reducing food waste through technological innovation.",
+    "Design a city where all modes of transportation are vertically oriented.",
+    "What societal norms might emerge in a world without gender?",
+    "Imagine a civilization based entirely on underwater agriculture; what technology might be required?",
+    "How might public health improve if all houses had healing gardens?",
+    "What might be the cultural effects if everyone suddenly had access to time travel?",
+    "Create a concept for a museum that showcases possible futures.",
+    "What would be the impact of a government mandating weekly mental health days?",
+    "Invent a game that teaches players about sustainable living.",
+    "How could we design a school that encourages lifelong learning from adults as well as children?",
+    "Describe a new form of professional sports that focuses on non-physical competition.",
+]
+
+# if you want an extended evaluation
+if extended_eval:
+    questions += extended_questions
 
 
 
