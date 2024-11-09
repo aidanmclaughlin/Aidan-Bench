@@ -1,6 +1,4 @@
 
-extended_eval = False
-
 questions = [
     (1, "Provide an explanation for Japan's Lost Decades."),
     (2, "What is a cause of World War 1?"),
@@ -30,51 +28,61 @@ questions = [
 ]
 
 extended_questions = [
-    # Creative and unexpected questions - generated from the base.
-    "How might we design a city that functions entirely underwater?",
-    "What societal changes might occur if humans could communicate with animals?",
-    "Propose a non-military use for a fleet of drones.",
-    "Describe a sustainable farming method that could be used in a floating city.",
-    "If all buildings were required to be bio-luminescent, what effects might this have?",
-    "Invent a device that translates dreams into tangible art.",
-    "How might daily life change if humans had the ability to breathe underwater?",
-    "Create a recipe for a 'happiness-inducing' smoothie.",
-    "What new environmental challenges might arise if all vehicles were self-driving?",
-    "Design a fashion line that incorporates smart clothing technology.",
-    "Imagine a world where books are replaced by holographic storytelling; what impacts might this have?",
-    "What might be the implications of having robots as therapists?",
-    "Propose a system for energy-harvesting from natural disasters.",
-    "How might the education system be revolutionized by virtual reality classrooms?",
-    "What unique challenges might arise in a society where everyone lives to be 150 years old?",
-    "Describe a mobile app that encourages acts of kindness.",
-    "If people could naturally hibernate, what would be the societal and economic impacts?",
-    "Imagine a competition where contestants build habitats for animals; what might be included?",
-    "What might be the benefits of reintroducing dinosaurs into modern ecosystems?",
-    "Propose a mechanism for reducing food waste through technological innovation.",
-    "Design a city where all modes of transportation are vertically oriented.",
-    "What societal norms might emerge in a world without gender?",
-    "Imagine a civilization based entirely on underwater agriculture; what technology might be required?",
-    "How might public health improve if all houses had healing gardens?",
-    "What might be the cultural effects if everyone suddenly had access to time travel?",
-    "Create a concept for a museum that showcases possible futures.",
-    "What would be the impact of a government mandating weekly mental health days?",
-    "Invent a game that teaches players about sustainable living.",
-    "How could we design a school that encourages lifelong learning from adults as well as children?",
-    "Describe a new form of professional sports that focuses on non-physical competition.",
+    (26, "How might we design a city that functions entirely underwater?"),
+    (27, "What societal changes might occur if humans could communicate with animals?"),
+    (28, "Propose a non-military use for a fleet of drones."),
+    (29, "Describe a sustainable farming method that could be used in a floating city."),
+    (30, "If all buildings were required to be bio-luminescent, what effects might this have?"),
+    (31, "Invent a device that translates dreams into tangible art."),
+    (32, "How might daily life change if humans had the ability to breathe underwater?"),
+    (33, "Create a recipe for a 'happiness-inducing' smoothie."),
+    (34, "What new environmental challenges might arise if all vehicles were self-driving?"),
+    (35, "Design a fashion line that incorporates smart clothing technology."),
+    (36, "Imagine a world where books are replaced by holographic storytelling; what impacts might this have?"),
+    (37, "What might be the implications of having robots as therapists?"),
+    (38, "Propose a system for energy-harvesting from natural disasters."),
+    (39, "How might the education system be revolutionized by virtual reality classrooms?"),
+    (40, "What unique challenges might arise in a society where everyone lives to be 150 years old?"),
+    (41, "Describe a mobile app that encourages acts of kindness."),
+    (42, "If people could naturally hibernate, what would be the societal and economic impacts?"),
+    (43, "Imagine a competition where contestants build habitats for animals; what might be included?"),
+    (44, "What might be the benefits of reintroducing dinosaurs into modern ecosystems?"),
+    (45, "Propose a mechanism for reducing food waste through technological innovation."),
+    (46, "Design a city where all modes of transportation are vertically oriented."),
+    (47, "What societal norms might emerge in a world without gender?"),
+    (48, "Imagine a civilization based entirely on underwater agriculture; what technology might be required?"),
+    (49, "How might public health improve if all houses had healing gardens?"),
+    (50, "What might be the cultural effects if everyone suddenly had access to time travel?"),
+    (51, "Create a concept for a museum that showcases possible futures."),
+    (52, "What would be the impact of a government mandating weekly mental health days?"),
+    (53, "Invent a game that teaches players about sustainable living."),
+    (54, "How could we design a school that encourages lifelong learning from adults as well as children?"),
+    (55, "Describe a new form of professional sports that focuses on non-physical competition."),
 ]
 
-# if you want an extended evaluation
+extended_eval = False
+
 if extended_eval:
     questions += extended_questions
 
 
-
-def create_gen_prompt(question: str, previous_answers: list) -> str:
-    prompt = (
-        "Answer the following question:.\n"
-        f"<question>{question}</question>\n"
-        "Your response should be a single brief sentence.\n"
-    )
+def create_gen_prompt(question: str, previous_answers: list, cot=False) -> str:
+    if cot:
+        prompt = (
+            "Answer the following question:.\n"
+            f"<question>{question}</question>\n"
+            "Please think carefully step-by-step and show your reasoning.\n"
+            "Enclose your thoughts in <thoughts></thoughts> XML tags.\n"
+            "Finally, when you are ready to give your response, enclose it in <answer></answer> XML tags.\n"
+            "Your final answer should be a single brief sentence.\n"
+        )
+    
+    else:
+        prompt = (
+            "Answer the following question:.\n"
+            f"<question>{question}</question>\n"
+            "Your response should be a single brief sentence.\n"
+        )
 
     if len(previous_answers) > 0:
 
