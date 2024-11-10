@@ -140,6 +140,7 @@ def judge_similarity(question: str, answer1: str, answer2: str, model_name: str)
     Your response must end with this score in the specified format.
     """
     response = chat_with_model(prompt, model=model_name, temperature=0.7)
+    print(f"Answer 1: {answer1}\nAnswer 2: {answer2}\nScore: {int(_extract_xml_content(response, 'similarity_score'))}")
     return int(_extract_xml_content(response, "similarity_score")) / 100
 
 
