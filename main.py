@@ -11,26 +11,30 @@ def benchmark_model(model_names: list[str], multithreaded: bool = True, temperat
                     chain_of_thought: bool = False, use_llm: bool = False, num_runs: int = 1):
     if multithreaded:
         with ThreadPoolExecutor() as executor:
-            futures = []
-            for model_name, temperature in product(model_names, temperatures):
-                for _ in range(num_runs):
-                    for question in questions:
-                        future = executor.submit(
-                            benchmark_question,
-                            question,
-                            model_name,
-                            temperature,
-                            chain_of_thought,
-                            use_llm
-                        )
-                        futures.append(
-                            (future, question, model_name, temperature))
-            for future, question, model_name, temperature in futures:
+            # Map futures to their parameters for exception handling
+            future_to_params = {
+                executor.submit(
+                    benchmark_question,
+                    question,
+                    model_name,
+                    temperature,
+                    chain_of_thought,
+                    use_llm
+                ): (question, model_name, temperature)
+                for model_name, temperature in product(model_names, temperatures)
+                for _ in range(num_runs)
+                for question in questions
+            }
+
+            # Process futures as they complete
+            for future in as_completed(future_to_params):
+                question, model_name, temperature = future_to_params[future]
                 try:
                     future.result()
                 except Exception as e:
                     print(
-                        f"{Fore.RED}Error for model '{model_name}', temperature {temperature}, question '{question}': {str(e)}{Style.RESET_ALL}")
+                        f"{Fore.RED}Error for model '{model_name}', temperature {temperature}, question '{question}': {e}{Style.RESET_ALL}"
+                    )
     else:
         for model_name, temperature in product(model_names, temperatures):
             for _ in range(num_runs):
@@ -45,7 +49,8 @@ def benchmark_model(model_names: list[str], multithreaded: bool = True, temperat
                         )
                     except Exception as e:
                         print(
-                            f"{Fore.RED}Error for model '{model_name}', temperature {temperature}, question '{question}': {str(e)}{Style.RESET_ALL}")
+                            f"{Fore.RED}Error for model '{model_name}', temperature {temperature}, question '{question}': {e}{Style.RESET_ALL}"
+                        )
 
 
 if __name__ == "__main__":
