@@ -6,13 +6,24 @@ def gen_answer(question: str, previous_answers: list, cot=False) -> str:
     base_prompt = (
         "Answer the following question:.\n"
         f"<question>{question}</question>\n"
+        "Provide your answer in <answer></answer> XML tags.\n"
     )
 
     if cot:
         base_prompt += (
-            "Please think carefully step-by-step and show your reasoning.\n"
-            "Enclose your thoughts in <thoughts></thoughts> XML tags.\n"
-            "Finally, when you are ready to give your response, enclose it in <answer></answer> XML tags.\n"
+            "Let's approach this methodically:\n\n"
+            "1. First, carefully review any previous answers to avoid repetition:\n"
+            "- Analyze the core concepts and themes already covered\n"
+            "- Identify unexplored angles and perspectives\n\n"
+            "2. Brainstorm fresh approaches:\n"
+            "- Generate multiple unique possibilities\n"
+            "- Consider unconventional but valid perspectives\n"
+            "- Look for interesting connections or insights\n\n"
+            "3. Develop your chosen idea:\n"
+            "- Reason through the logic step-by-step\n"
+            "- Validate your reasoning\n\n"
+            "Show your complete thinking process in <thoughts></thoughts> XML tags.\n"
+            "When ready, provide your final response in <answer></answer> XML tags.\n"
         )
 
     base_prompt += "Your response should be a single brief sentence.\n"
@@ -33,7 +44,7 @@ def gen_answer(question: str, previous_answers: list, cot=False) -> str:
 
 
 def judge_answer(question: str, answer: str) -> int:
-    prompt = f"""    Your task is to evaluate the coherence and plausibility of an answer to a given question. This involves assessing whether the answer makes sense and isn't nonsensical or implausible.
+    prompt = f"""Your task is to evaluate the coherence and plausibility of an answer to a given question. This involves assessing whether the answer makes sense and isn't nonsensical or implausible.
 
     Question: <question>{question}</question>
     Answer: <answer>{answer}</answer>
@@ -54,16 +65,40 @@ def judge_answer(question: str, answer: str) -> int:
     3. Nonsensical check:
     [Identify any completely unrelated or absurd elements]
 
-    Based on your analysis, provide a final Coherence and Plausibility Score on a scale of 1 - 10, where:
-    1-3: Incoherent, implausible, or nonsensical
-    4-6: Partially coherent and plausible, but with some issues
-    7-8: Mostly coherent and plausible with minor issues
-    9-10: Highly coherent and plausible
+    Based on your analysis, provide a final Coherence and Plausibility Score on a scale of 0 - 100, where:
 
-    Ensure that nonsensical or completely implausible answers receive very low scores (1-3).
+    0-20: INCOHERENT/NONSENSICAL
+    - Answer is completely unrelated to the question
+    - Contains logical impossibilities or contradictions
+    - Makes claims that defy basic reality
+    - Shows no understanding of the question's context
 
-    IMPORTANT: After your reasoning, you must provide your final Coherence and Plausibility Score as a single integer between 1 and 10, enclosed in <coherence_score></coherence_score> XML tags. For example:
-    <coherence_score>7</coherence_score>
+    21-40: SEVERELY FLAWED
+    - Major logical gaps or inconsistencies
+    - Significant misunderstanding of core concepts
+    - Contains partially relevant information but mostly incorrect
+    - May include some true statements but fails to form a coherent response
+
+    41-60: PARTIALLY COHERENT
+    - Shows basic understanding of the question
+    - Contains some valid points mixed with errors
+    - Logic is followable but may have weak connections
+    - Answer is relevant but may miss key aspects
+    
+    61-80: MOSTLY COHERENT
+    - Demonstrates clear understanding of the question
+    - Logic is sound with minor gaps or inconsistencies
+    - Most claims are plausible and well-supported
+    - Forms a generally complete and relevant response
+
+    81-100: HIGHLY COHERENT
+    - Perfectly addresses the question
+    - Demonstrates complete logical consistency
+    - All claims are plausible and well-grounded
+    - Forms a comprehensive and precise response
+
+    IMPORTANT: After your reasoning, you must provide your final Coherence and Plausibility Score as a single integer between 0 and 100, enclosed in <coherence_score></coherence_score> XML tags. For example:
+    <coherence_score>75</coherence_score>
 
     Your response must end with this score in the specified format.
     """
