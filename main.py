@@ -1,14 +1,24 @@
 from colorama import Fore, Style
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import product
+from typing import Optional
 from benchmark import benchmark_question
 from model_list import models
 from question_list import questions
 import argparse
 
 
-def benchmark_model(model_names: list[str], multithreaded: bool = True, temperatures: list[float] = [0.7],
-                    chain_of_thought: bool = False, use_llm: bool = False, num_runs: int = 1):
+def benchmark_model(
+    model_names: list[str],
+    multithreaded: bool = True,
+    temperatures: list[float] = [0.7],
+    chain_of_thought: bool = False,
+    use_llm: bool = False,
+    num_runs: int = 1,
+    num_questions: Optional[int] = None
+):
+    questions_to_use = questions[:num_questions] if num_questions else questions
+
     if multithreaded:
         with ThreadPoolExecutor(max_workers=100) as executor:
             future_to_params = {
@@ -22,7 +32,7 @@ def benchmark_model(model_names: list[str], multithreaded: bool = True, temperat
                 ): (question, model_name, temperature)
                 for model_name, temperature in product(model_names, temperatures)
                 for _ in range(num_runs)
-                for question in questions
+                for question in questions_to_use
             }
 
             # Process futures as they complete
@@ -37,7 +47,7 @@ def benchmark_model(model_names: list[str], multithreaded: bool = True, temperat
     else:
         for model_name, temperature in product(model_names, temperatures):
             for _ in range(num_runs):
-                for question in questions:
+                for question in questions_to_use:
                     try:
                         benchmark_question(
                             question,
@@ -97,6 +107,12 @@ if __name__ == "__main__":
         default=1,
         help="Number of identical runs to perform"
     )
+    parser.add_argument(
+        "--num-questions",
+        type=int,
+        default=None,
+        help="Number of questions to benchmark. Use all if not specified."
+    )
     args = parser.parse_args()
 
     if args.all_models:
@@ -110,5 +126,6 @@ if __name__ == "__main__":
         [round(t * 0.1, 1) for t in range(11)] if args.temp_range else [args.temperature],
         args.chain_of_thought,
         args.use_llm_similarity,
-        args.num_runs
+        args.num_runs,
+        args.num_questions
     )
