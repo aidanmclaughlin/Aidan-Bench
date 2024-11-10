@@ -55,6 +55,7 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
                     f"Total Answers Generated: {len(new_answers_data)}\n"
                     f"Total Embedding Novelty Score: {total_novelty_score:.2f}\n"
                     f"Total Coherence Score: {total_coherence_score:.2f}"
+                    "\n\n"
                 )
                 break
 
@@ -78,8 +79,9 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
                         f"Final Statistics:\n"
                         f"Total Answers Generated: {len(new_answers_data)}\n"
                         f"Total Embedding Novelty Score: {total_novelty_score:.2f}\n"
-                        f"Total Coherence Score: {total_coherence_score:.2f}"
-                        f"{f'Total LLM Novelty Score: {sum(d.get("llm_dissimilarity_score", 0) for d in new_answers_data):.2f}' if use_llm else ''}"
+                        f"Total Coherence Score: {total_coherence_score:.2f}\n"
+                        f"Total LLM Novelty Score: {sum(d.get('llm_dissimilarity_score', 0) for d in new_answers_data):.2f}" if use_llm else ""
+                        "\n\n"
                     )
                     break
 
@@ -91,6 +93,7 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
                 f"{Fore.GREEN}Answer #{answer_num}: {new_answer}{Style.RESET_ALL}\n"
                 f"{Fore.MAGENTA}Coherence Score: {coherence_score}{Style.RESET_ALL}\n"
                 f"{Fore.BLUE}Embedding Dissimilarity Score: {embedding_novelty_score:.2f}{Style.RESET_ALL}"
+                "\n\n"
             )
             if use_llm:
                 status_message += f"\n{Fore.BLUE}LLM Dissimilarity Score: {llm_novelty_score:.2f}{Style.RESET_ALL}"
