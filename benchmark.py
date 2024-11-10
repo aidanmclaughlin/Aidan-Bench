@@ -19,6 +19,7 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
     answer_num = len(previous_answers) + 1
 
     total_novelty_score = 0.0
+    new_answers_data = []
 
     while True:
         try:
@@ -38,7 +39,6 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
             novelty_score = _check_similarity(
                 question, new_answer, previous_answers, use_llm
             )
-            # If using llm, num matches is K⋅N + 2K(K−1), where K is len(prev_answers) and N how many answers we've generated
             total_novelty_score += novelty_score  # Accumulate the novelty score
 
             if novelty_score < 0.1:
@@ -46,14 +46,34 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
                     f"{Fore.YELLOW}Output is redundant. Stopping generation for this question.{Style.RESET_ALL}")
                 break
 
-            _save_answer(results, model_results, question, new_answer, novelty_score,
-                         coherence_score, answer_num, start_time, model_name, temperature)
+            answer_data = {
+                'answer_num': answer_num,
+                'answer': new_answer,
+                'dissimilarity_score': novelty_score,
+                'coherence_score': coherence_score,
+                'processing_time': time.time() - start_time
+            }
+            new_answers_data.append(answer_data)
+
+            print(
+                f"Using {model_name} with temperature {temperature}\n",
+                f"{Fore.CYAN}Question: {question}{Style.RESET_ALL}\n"
+                f"{Fore.GREEN}Answer #{answer_num}: {new_answer}{Style.RESET_ALL}\n"
+                f"{Fore.MAGENTA}Coherence Score: {coherence_score}{Style.RESET_ALL}\n"
+                f"{Fore.BLUE}Dissimilarity Score: {novelty_score:.2f}{Style.RESET_ALL}\n"
+                f"{Fore.YELLOW}Processing Time: {answer_data['processing_time']:.2f} seconds{Style.RESET_ALL}\n\n"
+            )
+
             previous_answers.append(new_answer)  # Update previous answers
             answer_num += 1
 
         except Exception as e:
             print(f"{Fore.RED}Error processing question: {str(e)}{Style.RESET_ALL}")
             break
+
+    if new_answers_data:
+        model_results[question].extend(new_answers_data)
+        _save_results(results)
 
     print(f"Total Novelty Score: {total_novelty_score}")
 
@@ -65,29 +85,6 @@ def _ensure_result_structure(results: dict, model_name: str, temperature: float,
         results['models'][model_name][temperature] = {}
     if question not in results['models'][model_name][temperature]:
         results['models'][model_name][temperature][question] = []
-
-
-def _save_answer(results: dict, model_results: dict, question: str, answer: str,
-                 novelty_score: float, coherence_score: int, answer_num: int, start_time: float, model_name: str, temperature: float):
-    answer_data = {
-        'answer_num': answer_num,
-        'answer': answer,
-        'dissimilarity_score': novelty_score,
-        'coherence_score': coherence_score,
-        'processing_time': time.time() - start_time
-    }
-
-    model_results[question].append(answer_data)
-    _save_results(results)
-
-    print(
-        f"Using {model_name} with temperature {temperature}\n",
-        f"{Fore.CYAN}Question: {question}{Style.RESET_ALL}\n"
-        f"{Fore.GREEN}Answer #{answer_num}: {answer}{Style.RESET_ALL}\n"
-        f"{Fore.MAGENTA}Coherence Score: {coherence_score}{Style.RESET_ALL}\n"
-        f"{Fore.BLUE}Dissimilarity Score: {novelty_score:.2f}{Style.RESET_ALL}\n"
-        f"{Fore.YELLOW}Processing Time: {answer_data['processing_time']:.2f} seconds{Style.RESET_ALL}\n\n"
-    )
 
 
 def _save_results(results: dict, filename: str = 'results.pkl'):
