@@ -7,38 +7,47 @@ import pickle
 from threading import Lock
 
 _results_lock = Lock()
+judge_model = "anthropic/claude-3.5-sonnet"
 
 
-def benchmark_question(question: str, model_name: str, temperature: float, chain_of_thought: bool = False):
+def benchmark_question(question: str, model_name: str, temperature: float, chain_of_thought: bool = False, use_llm: bool = False):
     start_time = time.time()
-    
+
     results = _load_results()
     _ensure_result_structure(results, model_name, temperature, question)
     model_results = results['models'][model_name][temperature]
     previous_answers = [data['answer'] for data in model_results[question]]
     answer_num = len(previous_answers) + 1
 
-    try:
-        new_answer = gen_answer(question, previous_answers, chain_of_thought)
+    while True:
+        try:
+            new_answer = gen_answer(
+                question,
+                previous_answers,
+                model_name,
+                chain_of_thought
+            )
+            coherence_score = judge_answer(question, new_answer, judge_model)
 
-        coherence_score = judge_answer(question, new_answer)
-        if coherence_score <= 3:
-            print(
-                f"{Fore.YELLOW}Output is incoherent. Moving to next question.{Style.RESET_ALL}")
+            if coherence_score <= 3:
+                print(
+                    f"{Fore.YELLOW}Output is incoherent. Stopping generation for this question.{Style.RESET_ALL}")
+                return
+
+            novelty_score = _check_similarity(
+                question, new_answer, previous_answers, use_llm)
+            if novelty_score < 0.1:
+                print(
+                    f"{Fore.YELLOW}Output is redundant. Stopping generation for this question.{Style.RESET_ALL}")
+                return
+
+            _save_answer(results, model_results, question, new_answer, novelty_score,
+                         coherence_score, answer_num, start_time)
             return
 
-        novelty_score = _check_similarity(
-            question, new_answer, previous_answers, False)
-        if novelty_score < 0.1:
-            print(
-                f"{Fore.YELLOW}Output is redundant. Moving to next question.{Style.RESET_ALL}")
+        except Exception as e:
+            print(f"{Fore.RED}Error processing question: {str(e)}{Style.RESET_ALL}")
             return
-
-        _save_answer(results, model_results, question, new_answer, novelty_score,
-                     coherence_score, answer_num, start_time)
-
-    except Exception as e:
-        print(f"{Fore.RED}Error processing question: {str(e)}{Style.RESET_ALL}")
 
 
 def _ensure_result_structure(results: dict, model_name: str, temperature: float, question: str):
@@ -77,7 +86,7 @@ def _check_similarity(question: str, new_answer: str, previous_answers: list, us
         return 1.0
 
     if use_llm:
-        similarities = [judge_similarity(question, new_answer, prev_answer)
+        similarities = [judge_similarity(question, new_answer, prev_answer, judge_model)
                         for prev_answer in previous_answers]
         return 1 - max(similarities)
     else:
