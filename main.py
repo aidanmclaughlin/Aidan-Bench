@@ -10,8 +10,7 @@ import argparse
 def benchmark_model(model_names: list[str], multithreaded: bool = True, temperatures: list[float] = [0.7],
                     chain_of_thought: bool = False, use_llm: bool = False, num_runs: int = 1):
     if multithreaded:
-        with ThreadPoolExecutor() as executor:
-            # Map futures to their parameters for exception handling
+        with ThreadPoolExecutor(max_workers=100) as executor:
             future_to_params = {
                 executor.submit(
                     benchmark_question,
