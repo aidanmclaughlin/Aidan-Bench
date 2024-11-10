@@ -54,7 +54,7 @@ questions = [
    (53, "Devise a farming technique to harvest dinoflagellates and retain their bioluminescence."),
    (54, "How can a perfumer increase the sillage of their scent?"),
    (55, "What can an artist who enjoys Basquiat’s art take inspiration from?"),
-   (56, "Provide a proof for the Pythagorean theorem, either novel or currently existing."),
+   (56, "Provide a proof for the Pythagorean theorem."),
    (57, "Tell me what colors of oil paints to mix to make a novel color that a mantis shrimp could see but a human could not."),
    (58, "A perfumer is creating a unique, unisex scent with benzoin and vanilla middle notes, what base and top notes should they add?"),
    (59, "What is a non poisonous recipe nobody has prepared before?"),
@@ -62,6 +62,6 @@ questions = [
    (61, "Devise a strategy for me to always find gems when I mine in Webkinz World’s mines."),
    (62, "Make a setlist of 3 songs for a female and nonbinary membered university acapella group."),
    (63, "What is a human value to align a large language model on?"),
-   (64, "Give me a proof to Euclid's theorem of the infinitude of primes, either novel or currently existing."),
-   (65, "Give a proof for the Cauchy-Schwarz Inequality, either novel or currently existing.")
+   (64, "Give me a proof to Euclid's theorem of the infinitude of primes."),
+   (65, "Give a proof for the Cauchy-Schwarz Inequality.")
 ] 
