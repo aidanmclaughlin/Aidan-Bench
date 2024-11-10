@@ -5,14 +5,13 @@ import time
 import numpy as np
 import pickle
 from threading import Lock
+from filelock import FileLock
 
-_results_lock = Lock()
 judge_model = "anthropic/claude-3.5-sonnet"
 
 
 def benchmark_question(question: str, model_name: str, temperature: float, chain_of_thought: bool = False, use_llm: bool = False):
     start_time = time.time()
-
     results = _load_results()
     _ensure_result_structure(results, model_name, temperature, question)
     model_results = results['models'][model_name][temperature]
@@ -40,7 +39,6 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
                 print(
                     f"{Fore.YELLOW}Output is redundant. Stopping generation for this question.{Style.RESET_ALL}")
                 return
-
             _save_answer(results, model_results, question, new_answer, novelty_score,
                          coherence_score, answer_num, start_time)
             return
@@ -51,13 +49,12 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
 
 
 def _ensure_result_structure(results: dict, model_name: str, temperature: float, question: str):
-    with _results_lock:
-        if model_name not in results['models']:
-            results['models'][model_name] = {}
-        if temperature not in results['models'][model_name]:
-            results['models'][model_name][temperature] = {}
-        if question not in results['models'][model_name][temperature]:
-            results['models'][model_name][temperature][question] = []
+    if model_name not in results['models']:
+        results['models'][model_name] = {}
+    if temperature not in results['models'][model_name]:
+        results['models'][model_name][temperature] = {}
+    if question not in results['models'][model_name][temperature]:
+        results['models'][model_name][temperature][question] = []
 
 
 def _save_answer(results: dict, model_results: dict, question: str, answer: str,
@@ -69,14 +66,22 @@ def _save_answer(results: dict, model_results: dict, question: str, answer: str,
         'coherence_score': coherence_score,
         'processing_time': time.time() - start_time
     }
+    
+    model_results[question].append(answer_data)
+    _save_results(results)
 
-    with _results_lock:
-        model_results[question].append(answer_data)
-        _save_results(results)
+    print(
+        f"{Fore.CYAN}Question: {question}{Style.RESET_ALL}\n"
+        f"{Fore.GREEN}Answer #{answer_num}: {answer}{Style.RESET_ALL}\n"
+        f"{Fore.MAGENTA}Coherence Score: {coherence_score}{Style.RESET_ALL}\n"
+        f"{Fore.BLUE}Dissimilarity Score: {novelty_score:.2f}{Style.RESET_ALL}\n"
+        f"{Fore.YELLOW}Processing Time: {answer_data['processing_time']:.2f} seconds{Style.RESET_ALL}\n\n"
+    )
 
 
 def _save_results(results: dict, filename: str = 'results.pkl'):
-    with _results_lock:
+    lockfile = f"{filename}.lock"
+    with FileLock(lockfile):
         with open(filename, 'wb') as f:
             pickle.dump(results, f)
 
@@ -109,8 +114,9 @@ def _get_novelty_score(new_answer: str, previous_answers: list) -> float:
 
 
 def _load_results(filename: str = 'results.pkl') -> dict:
+    lockfile = f"{filename}.lock"
     try:
-        with _results_lock:
+        with FileLock(lockfile):
             with open(filename, 'rb') as f:
                 return pickle.load(f)
     except FileNotFoundError:
