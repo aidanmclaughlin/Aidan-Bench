@@ -1,49 +1,63 @@
 from colorama import Fore, Style
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from itertools import product
 from benchmark import benchmark_question
 from model_list import models
 from question_list import questions
 import argparse
 
 
-def benchmark_model(model_name: str, multithreaded: bool = False, temperature: float | None = 0.7, chain_of_thought: bool = False):
-    if isinstance(model_name, list):
-        _benchmark_multiple_models(
-            model_name, multithreaded, temperature, chain_of_thought)
-        return
-
-    if isinstance(temperature, list):
-        _benchmark_temperature_range(
-            model_name, multithreaded, temperature, chain_of_thought)
-        return
-
+def benchmark_model(model_names: list[str], multithreaded: bool = True, temperatures: list[float] = [0.7],
+                    chain_of_thought: bool = False, use_llm: bool = False, num_runs: int = 1):
     if multithreaded:
-        with ThreadPoolExecutor(max_workers=len(questions)) as executor:
-            futures = [
-                executor.submit(benchmark_question, q, model_name,
-                                temperature, chain_of_thought)
-                for q in questions
-            ]
-            for future in as_completed(futures):
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for model_name, temperature in product(model_names, temperatures):
+                for _ in range(num_runs):
+                    for question in questions:
+                        future = executor.submit(
+                            benchmark_question,
+                            question,
+                            model_name,
+                            temperature,
+                            chain_of_thought,
+                            use_llm
+                        )
+                        futures.append(
+                            (future, question, model_name, temperature))
+            for future, question, model_name, temperature in futures:
                 try:
                     future.result()
                 except Exception as e:
-                    print(f"{Fore.RED}Error in thread: {str(e)}{Style.RESET_ALL}")
+                    print(
+                        f"{Fore.RED}Error for model '{model_name}', temperature {temperature}, question '{question}': {str(e)}{Style.RESET_ALL}")
     else:
-        for question in questions:
-            benchmark_question(question, model_name,
-                               temperature, chain_of_thought)
+        for model_name, temperature in product(model_names, temperatures):
+            for _ in range(num_runs):
+                for question in questions:
+                    try:
+                        benchmark_question(
+                            question,
+                            model_name,
+                            temperature,
+                            chain_of_thought,
+                            use_llm
+                        )
+                    except Exception as e:
+                        print(
+                            f"{Fore.RED}Error for model '{model_name}', temperature {temperature}, question '{question}': {str(e)}{Style.RESET_ALL}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Benchmark a language model.")
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "model_name",
         type=str,
         nargs='?',
         help="Name of the model to benchmark"
     )
-    parser.add_argument(
+    group.add_argument(
         "--all-models",
         action="store_true",
         help="Benchmark all available models"
@@ -69,53 +83,34 @@ if __name__ == "__main__":
         action="store_true",
         help="Enable chain-of-thought prompting"
     )
+    parser.add_argument(
+        "--use-llm-similarity",
+        action="store_true",
+        help="Use LLM to judge answer similarity instead of embeddings"
+    )
+    parser.add_argument(
+        "--num-runs",
+        type=int,
+        default=1,
+        help="Number of identical runs to perform"
+    )
     args = parser.parse_args()
 
-    if args.all_models and args.model_name:
-        parser.error("Cannot specify both model_name and --all-models")
-
-    model_name = models if args.all_models else args.model_name
-    temperature = [round(t * 0.1, 1) for t in range(11)
-                   ] if args.temp_range else args.temperature
-
-    if not args.all_models and not args.model_name:
-        parser.error("Must specify either model_name or --all-models")
-
-    benchmark_model(model_name, not args.single_threaded,
-                    temperature, args.chain_of_thought)
-
-
-def _benchmark_multiple_models(models: list[str], multithreaded: bool, temperature: float | list[float], chain_of_thought: bool):
-    if multithreaded:
-        with ThreadPoolExecutor() as executor:
-            futures = [
-                executor.submit(benchmark_model, model, False,
-                                temperature, chain_of_thought)
-                for model in models
-            ]
-            for future in as_completed(futures):
-                try:
-                    future.result()
-                except Exception as e:
-                    print(f"{Fore.RED}Error in thread: {str(e)}{Style.RESET_ALL}")
+    if args.all_models:
+        model_names = models
     else:
-        for model in models:
-            benchmark_model(model, False, temperature, chain_of_thought)
+        model_names = [args.model_name]
 
-
-def _benchmark_temperature_range(model: str, multithreaded: bool, temperatures: list[float], chain_of_thought: bool):
-    if multithreaded:
-        with ThreadPoolExecutor() as executor:
-            futures = [
-                executor.submit(benchmark_model, model,
-                                False, temp, chain_of_thought)
-                for temp in temperatures
-            ]
-            for future in as_completed(futures):
-                try:
-                    future.result()
-                except Exception as e:
-                    print(f"{Fore.RED}Error in thread: {str(e)}{Style.RESET_ALL}")
+    if args.temp_range:
+        temperatures = [round(t * 0.1, 1) for t in range(11)]
     else:
-        for temp in temperatures:
-            benchmark_model(model, False, temp, chain_of_thought)
+        temperatures = [args.temperature]
+
+    benchmark_model(
+        model_names,
+        not args.single_threaded,
+        temperatures,
+        args.chain_of_thought,
+        args.use_llm_similarity,
+        args.num_runs
+    )
