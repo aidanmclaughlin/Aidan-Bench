@@ -10,6 +10,16 @@ def chat_with_model(prompt, model, max_tokens=4000, temperature=0):
         api_key=os.getenv("OPEN_ROUTER_KEY"),
         base_url="https://openrouter.ai/api/v1"
     )
+    
+    extra_body = {}
+    if model == "meta-llama/llama-3.1-405b-instruct:bf16":
+        model = "meta-llama/llama-3.1-405b-instruct"
+        extra_body = {
+            "provider": {
+                "quantizations": ["bf16"]
+            }
+        }
+    
     response = client.chat.completions.create(
         model=model,
         messages=[
@@ -19,7 +29,8 @@ def chat_with_model(prompt, model, max_tokens=4000, temperature=0):
             }
         ],
         max_tokens=max_tokens,
-        temperature=temperature
+        temperature=temperature,
+        extra_body=extra_body
     )
     return response.choices[0].message.content
 
