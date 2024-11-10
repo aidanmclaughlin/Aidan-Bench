@@ -1,11 +1,11 @@
 from openai import AzureOpenAI
 import time
 import os
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 
 def chat(system_message, prompt, model):
-
-    return _attempt_api_call(lambda: _chat_internal(system_message, prompt, model))
+    return _chat_internal(system_message, prompt, model)
 
 
 def stream(system_message, prompt, model):
@@ -34,7 +34,7 @@ def stream(system_message, prompt, model):
 
 
 def message_chat(messages, model, max_tokens=None, temp=None):
-    return _attempt_api_call(lambda: _message_chat_internal(messages, model, max_tokens, temp))
+    return _message_chat_internal(messages, model, max_tokens, temp)
 
 
 def message_stream(messages, model):
@@ -107,17 +107,7 @@ def _consolidate_messages(messages, model):
     return consolidated_messages
 
 
-def _attempt_api_call(func):
-    attempts = 3
-    for _ in range(attempts):
-        try:
-            return func()
-        except Exception as e:
-            print(e)
-            continue
-    return "Model was shy and didn't respond :("
-
-
+@retry(wait=wait_exponential(min=1, max=60))
 def _chat_internal(system_message, prompt, model):
     client = _get_azure_client()
     messages = _create_messages(system_message, prompt, model)
@@ -129,6 +119,7 @@ def _chat_internal(system_message, prompt, model):
     return response.choices[0].message.content
 
 
+@retry(wait=wait_exponential(min=1, max=60))
 def _message_chat_internal(messages, model, max_tokens=None, temp=None):
     client = _get_azure_client()
     consolidated_messages = _consolidate_messages(messages, model)
