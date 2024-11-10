@@ -220,3 +220,6 @@ def plot_novelty_coherence_per_model(results_file='results.pkl'):
     plt.ylabel('Model')
     plt.tight_layout()
     plt.show()
+
+
+plot_novelty_coherence_per_model()

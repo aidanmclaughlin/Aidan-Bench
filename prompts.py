@@ -1,5 +1,6 @@
 import re
 from models import chat_with_model
+from azure import chat
 
 
 def gen_answer(question: str, previous_answers: list, model_name: str, cot=False) -> str:
@@ -102,7 +103,7 @@ def judge_answer(question: str, answer: str, model_name: str) -> int:
 
     Your response must end with this score in the specified format.
     """
-    response = chat_with_model(prompt, model=model_name, temperature=0.7)
+    response = chat("", prompt, model="o1-mini")
     return int(_extract_xml_content(response, "coherence_score"))
 
 
@@ -139,7 +140,7 @@ def judge_similarity(question: str, answer1: str, answer2: str, model_name: str)
 
     Your response must end with this score in the specified format.
     """
-    response = chat_with_model(prompt, model=model_name, temperature=0.7)
+    response = chat("", prompt, model="o1-mini")
     print(f"Answer 1: {answer1}\nAnswer 2: {answer2}\nScore: {int(_extract_xml_content(response, 'similarity_score'))}")
     return int(_extract_xml_content(response, "similarity_score")) / 100
 
