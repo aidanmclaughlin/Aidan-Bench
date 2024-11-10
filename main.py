@@ -37,18 +37,38 @@ def benchmark_model(model_name: str, multithreaded: bool = False, temperature: f
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Benchmark a language model.")
-    parser.add_argument("model_name", type=str, nargs='?',
-                        help="Name of the model to benchmark")
-    parser.add_argument("--all-models", action="store_true",
-                        help="Benchmark all available models")
-    parser.add_argument("--temp-range", action="store_true",
-                        help="Benchmark with temperatures from 0 to 1 in 0.1 increments")
-    parser.add_argument("--single-threaded", action="store_true",
-                        help="Run in single-threaded mode")
-    parser.add_argument("--temperature", type=float,
-                        default=0.7, help="Temperature for generation")
-    parser.add_argument("--chain-of-thought", action="store_true",
-                        help="Enable chain-of-thought prompting")
+    parser.add_argument(
+        "model_name",
+        type=str,
+        nargs='?',
+        help="Name of the model to benchmark"
+    )
+    parser.add_argument(
+        "--all-models",
+        action="store_true",
+        help="Benchmark all available models"
+    )
+    parser.add_argument(
+        "--temp-range",
+        action="store_true",
+        help="Benchmark with temperatures from 0 to 1 in 0.1 increments"
+    )
+    parser.add_argument(
+        "--single-threaded",
+        action="store_true",
+        help="Run in single-threaded mode"
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.7,
+        help="Temperature for generation"
+    )
+    parser.add_argument(
+        "--chain-of-thought",
+        action="store_true",
+        help="Enable chain-of-thought prompting"
+    )
     args = parser.parse_args()
 
     if args.all_models and args.model_name:
