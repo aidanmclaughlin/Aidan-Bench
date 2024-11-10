@@ -39,7 +39,7 @@ def gen_answer(question: str, previous_answers: list, model_name: str, cot=False
         )
 
     response = chat_with_model(
-        base_prompt, temperature=0.7, chain_of_thought=cot, model_name=model_name)
+        base_prompt, model=model_name, temperature=0.7, chain_of_thought=cot)
     return _extract_xml_content(response, "answer")
 
 
@@ -102,7 +102,7 @@ def judge_answer(question: str, answer: str, model_name: str) -> int:
 
     Your response must end with this score in the specified format.
     """
-    response = chat_with_model(prompt, temperature=0.7, model_name=model_name)
+    response = chat_with_model(prompt, model=model_name, temperature=0.7)
     return int(_extract_xml_content(response, "coherence_score"))
 
 
@@ -139,7 +139,7 @@ def judge_similarity(question: str, answer1: str, answer2: str, model_name: str)
 
     Your response must end with this score in the specified format.
     """
-    response = chat_with_model(prompt, temperature=0.7, model_name=model_name)
+    response = chat_with_model(prompt, model=model_name, temperature=0.7)
     return int(_extract_xml_content(response, "similarity_score")) / 100
 
 
