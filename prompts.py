@@ -2,7 +2,7 @@ import re
 from models import chat_with_model
 
 
-def gen_answer(question: str, previous_answers: list, cot=False) -> str:
+def gen_answer(question: str, previous_answers: list, model_name: str, cot=False) -> str:
     base_prompt = (
         "Answer the following question:.\n"
         f"<question>{question}</question>\n"
@@ -39,11 +39,11 @@ def gen_answer(question: str, previous_answers: list, cot=False) -> str:
         )
 
     response = chat_with_model(
-        base_prompt, temperature=0.7, chain_of_thought=cot)
+        base_prompt, temperature=0.7, chain_of_thought=cot, model_name=model_name)
     return _extract_xml_content(response, "answer")
 
 
-def judge_answer(question: str, answer: str) -> int:
+def judge_answer(question: str, answer: str, model_name: str) -> int:
     prompt = f"""Your task is to evaluate the coherence and plausibility of an answer to a given question. This involves assessing whether the answer makes sense and isn't nonsensical or implausible.
 
     Question: <question>{question}</question>
@@ -102,11 +102,11 @@ def judge_answer(question: str, answer: str) -> int:
 
     Your response must end with this score in the specified format.
     """
-    response = chat_with_model(prompt, temperature=0.7)
+    response = chat_with_model(prompt, temperature=0.7, model_name=model_name)
     return int(_extract_xml_content(response, "coherence_score"))
 
 
-def judge_similarity(question: str, answer1: str, answer2: str) -> float:
+def judge_similarity(question: str, answer1: str, answer2: str, model_name: str) -> float:
     prompt = f"""Your task is to evaluate how semantically similar two answers are to the same question, focusing on core concepts and meaning rather than exact wording.
 
     Original Question: <question>{question}</question>
@@ -139,7 +139,7 @@ def judge_similarity(question: str, answer1: str, answer2: str) -> float:
 
     Your response must end with this score in the specified format.
     """
-    response = chat_with_model(prompt, temperature=0.7)
+    response = chat_with_model(prompt, temperature=0.7, model_name=model_name)
     return int(_extract_xml_content(response, "similarity_score")) / 100
 
 
