@@ -33,11 +33,13 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
             coherence_score = judge_answer(question, new_answer, judge_model)
 
             if coherence_score <= 3:
-                print(f"Output is incoherent. Stopping generation for this question.")
-                print(f"Final Statistics:")
-                print(f"Total Answers Generated: {len(new_answers_data)}")
-                print(f"Total Embedding Novelty Score: {total_novelty_score:.2f}")
-                print(f"Total Coherence Score: {total_coherence_score:.2f}")
+                print(
+                    f"Output is incoherent. Stopping generation for this question.\n"
+                    f"Final Statistics:\n"
+                    f"Total Answers Generated: {len(new_answers_data)}\n"
+                    f"Total Embedding Novelty Score: {total_novelty_score:.2f}\n"
+                    f"Total Coherence Score: {total_coherence_score:.2f}"
+                )
                 break
 
             novelty_scores = _check_similarity(
@@ -47,11 +49,13 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
             total_novelty_score += embedding_novelty_score  # Accumulate the embedding novelty score
 
             if embedding_novelty_score < 0.1:
-                print(f"Output is redundant based on embedding similarity. Stopping generation for this question.")
-                print(f"Final Statistics:")
-                print(f"Total Answers Generated: {len(new_answers_data)}")
-                print(f"Total Embedding Novelty Score: {total_novelty_score:.2f}")
-                print(f"Total Coherence Score: {total_coherence_score:.2f}")
+                print(
+                    f"Output is redundant based on embedding similarity. Stopping generation for this question.\n"
+                    f"Final Statistics:\n"
+                    f"Total Answers Generated: {len(new_answers_data)}\n"
+                    f"Total Embedding Novelty Score: {total_novelty_score:.2f}\n"
+                    f"Total Coherence Score: {total_coherence_score:.2f}"
+                )
                 break
 
             total_coherence_score += coherence_score
@@ -69,18 +73,19 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
                 answer_data['llm_dissimilarity_score'] = llm_novelty_score
 
                 if llm_novelty_score < 0.1:
-                    print(f"Output is redundant based on LLM similarity. Stopping generation for this question.")
-                    print(f"Final Statistics:")
-                    print(f"Total Answers Generated: {len(new_answers_data)}")
-                    print(f"Total Embedding Novelty Score: {total_novelty_score:.2f}")
-                    print(f"Total Coherence Score: {total_coherence_score:.2f}")
-                    if use_llm:
-                        print(f"Total LLM Novelty Score: {sum(d.get('llm_dissimilarity_score', 0) for d in new_answers_data):.2f}")
+                    print(
+                        f"Output is redundant based on LLM similarity. Stopping generation for this question.\n"
+                        f"Final Statistics:\n"
+                        f"Total Answers Generated: {len(new_answers_data)}\n"
+                        f"Total Embedding Novelty Score: {total_novelty_score:.2f}\n"
+                        f"Total Coherence Score: {total_coherence_score:.2f}"
+                        f"{f'Total LLM Novelty Score: {sum(d.get("llm_dissimilarity_score", 0) for d in new_answers_data):.2f}' if use_llm else ''}"
+                    )
                     break
 
             new_answers_data.append(answer_data)
 
-            print(
+            status_message = (
                 f"Using {model_name} with temperature {temperature}\n"
                 f"{Fore.CYAN}Question: {question}{Style.RESET_ALL}\n"
                 f"{Fore.GREEN}Answer #{answer_num}: {new_answer}{Style.RESET_ALL}\n"
@@ -88,7 +93,8 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
                 f"{Fore.BLUE}Embedding Dissimilarity Score: {embedding_novelty_score:.2f}{Style.RESET_ALL}"
             )
             if use_llm:
-                print(f"{Fore.BLUE}LLM Dissimilarity Score: {llm_novelty_score:.2f}{Style.RESET_ALL}")
+                status_message += f"\n{Fore.BLUE}LLM Dissimilarity Score: {llm_novelty_score:.2f}{Style.RESET_ALL}"
+            print(status_message)
 
             previous_answers.append(new_answer)  # Update previous answers
             answer_num += 1
