@@ -52,9 +52,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Benchmark a language model.")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
-        "model_name",
+        "--model-name",
         type=str,
-        nargs='?',
         help="Name of the model to benchmark"
     )
     group.add_argument(
@@ -101,15 +100,10 @@ if __name__ == "__main__":
     else:
         model_names = [args.model_name]
 
-    if args.temp_range:
-        temperatures = [round(t * 0.1, 1) for t in range(11)]
-    else:
-        temperatures = [args.temperature]
-
     benchmark_model(
         model_names,
         not args.single_threaded,
-        temperatures,
+        [round(t * 0.1, 1) for t in range(11)] if args.temp_range else [args.temperature],
         args.chain_of_thought,
         args.use_llm_similarity,
         args.num_runs

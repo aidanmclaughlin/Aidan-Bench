@@ -39,7 +39,7 @@ def gen_answer(question: str, previous_answers: list, model_name: str, cot=False
         )
 
     response = chat_with_model(
-        base_prompt, model=model_name, temperature=0.7, chain_of_thought=cot)
+        base_prompt, model=model_name, temperature=0.7)
     return _extract_xml_content(response, "answer")
 
 
