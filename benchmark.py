@@ -47,7 +47,7 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
                 break
 
             _save_answer(results, model_results, question, new_answer, novelty_score,
-                         coherence_score, answer_num, start_time)
+                         coherence_score, answer_num, start_time, model_name, temperature)
             previous_answers.append(new_answer)  # Update previous answers
             answer_num += 1
 
@@ -68,7 +68,7 @@ def _ensure_result_structure(results: dict, model_name: str, temperature: float,
 
 
 def _save_answer(results: dict, model_results: dict, question: str, answer: str,
-                 novelty_score: float, coherence_score: int, answer_num: int, start_time: float):
+                 novelty_score: float, coherence_score: int, answer_num: int, start_time: float, model_name: str, temperature: float):
     answer_data = {
         'answer_num': answer_num,
         'answer': answer,
@@ -81,6 +81,7 @@ def _save_answer(results: dict, model_results: dict, question: str, answer: str,
     _save_results(results)
 
     print(
+        f"Using {model_name} with temperature {temperature}\n",
         f"{Fore.CYAN}Question: {question}{Style.RESET_ALL}\n"
         f"{Fore.GREEN}Answer #{answer_num}: {answer}{Style.RESET_ALL}\n"
         f"{Fore.MAGENTA}Coherence Score: {coherence_score}{Style.RESET_ALL}\n"
