@@ -30,8 +30,9 @@ def gen_answer(question: str, previous_answers: list, model_name: str, cot=False
     base_prompt += "Your response should be one direct answer- only provide one answer. DO NOT list multiple answers. Please try to be concise.\n"
 
     if previous_answers:
-        previous_answers_str = "\n".join(
-            [f"{i+1}. {answer}" for i, answer in enumerate(previous_answers)]
+
+        previous_answers_str = "\n\n".join(
+            [f"<previous_answer id='{i+1}'>\n{answer}\n</previous_answer>" for i, answer in enumerate(previous_answers)]
         )
         base_prompt += (
             "IMPORTANT: Provide an answer you *HAVE NOT* given previously.\n"
