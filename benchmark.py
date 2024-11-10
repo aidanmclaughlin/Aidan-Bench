@@ -4,7 +4,6 @@ from colorama import Fore, Style
 import time
 import numpy as np
 import pickle
-from threading import Lock
 from filelock import FileLock
 import concurrent.futures
 
