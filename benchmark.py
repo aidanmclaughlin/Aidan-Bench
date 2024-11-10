@@ -6,6 +6,7 @@ import numpy as np
 import pickle
 from threading import Lock
 from filelock import FileLock
+import concurrent.futures
 
 judge_model = "anthropic/claude-3.5-sonnet"
 
@@ -17,6 +18,8 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
     model_results = results['models'][model_name][temperature]
     previous_answers = [data['answer'] for data in model_results[question]]
     answer_num = len(previous_answers) + 1
+
+    total_novelty_score = 0.0
 
     while True:
         try:
@@ -31,21 +34,29 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
             if coherence_score <= 3:
                 print(
                     f"{Fore.YELLOW}Output is incoherent. Stopping generation for this question.{Style.RESET_ALL}")
-                return
+                break
 
             novelty_score = _check_similarity(
-                question, new_answer, previous_answers, use_llm)
+                question, new_answer, previous_answers, use_llm
+            )
+            # If using llm, num matches is K⋅N + 2K(K−1), where K is len(prev_answers) and N how many answers we've generated
+            total_novelty_score += novelty_score  # Accumulate the novelty score
+
             if novelty_score < 0.1:
                 print(
                     f"{Fore.YELLOW}Output is redundant. Stopping generation for this question.{Style.RESET_ALL}")
-                return
+                break
+
             _save_answer(results, model_results, question, new_answer, novelty_score,
                          coherence_score, answer_num, start_time)
-            return
+            previous_answers.append(new_answer)  # Update previous answers
+            answer_num += 1
 
         except Exception as e:
             print(f"{Fore.RED}Error processing question: {str(e)}{Style.RESET_ALL}")
-            return
+            break
+
+    print(f"Total Novelty Score: {total_novelty_score}")
 
 
 def _ensure_result_structure(results: dict, model_name: str, temperature: float, question: str):
@@ -66,7 +77,7 @@ def _save_answer(results: dict, model_results: dict, question: str, answer: str,
         'coherence_score': coherence_score,
         'processing_time': time.time() - start_time
     }
-    
+
     model_results[question].append(answer_data)
     _save_results(results)
 
@@ -91,8 +102,11 @@ def _check_similarity(question: str, new_answer: str, previous_answers: list, us
         return 1.0
 
     if use_llm:
-        similarities = [judge_similarity(question, new_answer, prev_answer, judge_model)
-                        for prev_answer in previous_answers]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(previous_answers)) as executor:
+            similarities = list(executor.map(
+                lambda prev_answer: judge_similarity(question, new_answer, prev_answer, judge_model),
+                previous_answers
+            ))
         return 1 - max(similarities)
     else:
         return _get_novelty_score(new_answer, previous_answers)
