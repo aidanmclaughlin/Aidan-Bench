@@ -26,7 +26,7 @@ def gen_answer(question: str, previous_answers: list, model_name: str, cot=False
             "When ready, provide your final response in <answer></answer> XML tags.\n"
         )
 
-    base_prompt += "Your response should be one direct answer- only provide one answer. DO NOT list multiple answers. Please try to be concise.\n"
+    base_prompt += "Your response should be one direct answer. Only provide one answer. DO NOT list multiple answers. Please try to be concise.\n"
 
     if previous_answers:
 
