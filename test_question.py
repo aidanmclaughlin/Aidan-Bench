@@ -1,7 +1,7 @@
 """A simple script to test how a model responds to a question posed in AidanBench format."""
 from prompts import gen_answer, judge_answer, judge_similarity
 
-question_to_test = "What might be an unexpected consequence of achieving nuclear fusion?"
+question_to_test = "Imagine a world where books are replaced by holographic storytelling; what impacts might this have?"
 
 answers = []
 for _ in range(10):
