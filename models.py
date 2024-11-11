@@ -4,10 +4,14 @@ from functools import lru_cache
 from retry import retry
 import azure
 
+if os.getenv("AZURE_API_KEY"):
+    print("Using Azure API Key")
+else:
+    print("Not using Azure API Key")
 
 @retry(tries=3)
 def chat_with_model(prompt, model, max_tokens=4000, temperature=0):
-    if "o1" in model.lower():
+    if "o1" in model.lower() and os.getenv("AZURE_API_KEY"):
         model = model.replace("openai/", "")
         return azure.message_chat(
             [{"role": "user", "content": prompt}],
