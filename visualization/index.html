@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Response Analysis</title>
+    
+    <!-- Load dependencies -->
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    
+    <style>
+        .card { 
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            margin: 16px;
+            padding: 16px;
+        }
+        .metrics-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 8px;
+        }
+        .metric {
+            background: #f3f4f6;
+            padding: 8px;
+            border-radius: 4px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .answer {
+            margin-top: 16px;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+        }
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            margin-bottom: 2rem;
+        }
+        .metrics-table th,
+        .metrics-table td {
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        .metrics-table th {
+            background-color: #f3f4f6;
+        }
+        .metrics-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .chart-container {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const modelData = {"models": {"openai/gpt-4o-2024-05-13": {"0.7": {"Why might the United States government nationalize ASI development?": [{"answer_num": 1, "answer": "The United States government might nationalize ASI development to ensure national security, preventing potential misuse by adversaries and aligning the technology's growth with the country's defense and strategic interests.", "embedding_dissimilarity_score": 1.0, "coherence_score": 80, "processing_time": 10.308847188949585, "llm_dissimilarity_score": 1.0}, {"answer_num": 2, "answer": "The United States government might nationalize ASI development to ensure that its growth adheres to ethical guidelines and regulatory frameworks, prioritizing societal well-being and public interests over private sector profit motives.", "embedding_dissimilarity_score": 0.10055499068310336, "coherence_score": 85, "processing_time": 25.9669029712677, "llm_dissimilarity_score": 0.7}]}}, "openai/gpt-4o-2024-08-06": {"0.7": {"Why might the United States government nationalize ASI development?": [{"answer_num": 1, "answer": "The United States government might nationalize ASI development to safeguard national security by controlling and securing critical technological advancements against foreign influence or misuse.", "embedding_dissimilarity_score": 1.0, "coherence_score": 85, "processing_time": 17.565704822540283, "llm_dissimilarity_score": 1.0}, {"answer_num": 2, "answer": "To ensure economic stability by managing the societal and economic shifts caused by rapid technological advancements, preventing mass unemployment and unequal wealth distribution.", "embedding_dissimilarity_score": 0.6786785365256145, "coherence_score": 70, "processing_time": 34.73653984069824, "llm_dissimilarity_score": 0.44999999999999996}, {"answer_num": 3, "answer": "The United States government might nationalize ASI development to ensure ethical oversight and safety, aligning the technology with public values and preventing harmful uses.", "embedding_dissimilarity_score": 0.12341550657633948, "coherence_score": 85, "processing_time": 182.72120094299316, "llm_dissimilarity_score": 0.35}]}}, "meta-llama/llama-3.1-405b-instruct:bf16": {"0.7": {"Why might the United States government nationalize ASI development?": [{"answer_num": 1, "answer": "The United States government might nationalize ASI development primarily to ensure national security, allowing for control over its development and use, and to mitigate the risks associated with its potentially transformative power.", "embedding_dissimilarity_score": 1.0, "coherence_score": 80, "processing_time": 440.57940793037415, "llm_dissimilarity_score": 1.0}, {"answer_num": 2, "answer": "The United States government might nationalize ASI development to manage its profound economic and social implications, ensuring that its benefits are equitably distributed, and its challenges are addressed in a way that prioritizes the public interest and sets a global standard for responsible ASI development.", "embedding_dissimilarity_score": 0.12371692494486775, "coherence_score": 85, "processing_time": 501.93125891685486, "llm_dissimilarity_score": 0.5}]}}, "google/gemini-pro-1.5": {"0.7": {"Why might the United States government nationalize ASI development?": [{"answer_num": 1, "answer": "The United States government might nationalize ASI development to safeguard national security and prevent potentially hostile actors from controlling this transformative technology.", "embedding_dissimilarity_score": 1.0, "coherence_score": 75, "processing_time": 51.76497197151184, "llm_dissimilarity_score": 1.0}]}}, "google/gemma-2-27b-it": {"0.7": {"What is a cause of World War 1?": [{"answer_num": 1, "answer": "The intricate system of alliances between European powers meant that a conflict between two nations could quickly draw in many others.", "embedding_dissimilarity_score": 1.0, "coherence_score": 90, "processing_time": 20.465832948684692, "llm_dissimilarity_score": 1.0}, {"answer_num": 2, "answer": "The intense nationalism that gripped Europe in the years leading up to the war fostered rivalries and a willingness to go to war.", "embedding_dissimilarity_score": 0.3977846212138345, "coherence_score": 85, "processing_time": 87.36006808280945, "llm_dissimilarity_score": 0.7}, {"answer_num": 3, "answer": "The competition for colonies and resources among European empires fueled tensions and contributed to the outbreak of World War I.", "embedding_dissimilarity_score": 0.374913441511864, "coherence_score": 85, "processing_time": 1099.572254896164, "llm_dissimilarity_score": 0.44999999999999996}, {"answer_num": 4, "answer": "The rapid militarization of Europe in the years before the war created an atmosphere of fear and suspicion, making war seem more likely.", "embedding_dissimilarity_score": 0.3290681371753301, "coherence_score": 90, "processing_time": 1234.9118809700012, "llm_dissimilarity_score": 0.35}, {"answer_num": 5, "answer": "Miscalculations and diplomatic failures by European leaders in the weeks following the assassination of Archduke Franz Ferdinand escalated a regional crisis into a global war.", "embedding_dissimilarity_score": 0.4538488177361175, "coherence_score": 70, "processing_time": 1366.3547341823578, "llm_dissimilarity_score": 0.5}, {"answer_num": 6, "answer": "The decline of the Ottoman Empire created a power vacuum in southeastern Europe, intensifying rivalries and contributing to the outbreak of World War I.", "embedding_dissimilarity_score": 0.36497407838118956, "coherence_score": 50, "processing_time": 1541.0326011180878, "llm_dissimilarity_score": 0.30000000000000004}, {"answer_num": 7, "answer": "Rising ethnic tensions within the Austro-Hungarian Empire contributed to the outbreak of World War I.", "embedding_dissimilarity_score": 0.3562224643647819, "coherence_score": 75, "processing_time": 1702.9183192253113, "llm_dissimilarity_score": 0.30000000000000004}]}}, "meta-llama/llama-3.1-70b-instruct": {"0.7": {"Why might the United States government nationalize ASI development?": [{"answer_num": 1, "answer": "The United States government might nationalize ASI development primarily for strategic and security reasons, to ensure control over a technology that could significantly impact national power and security.", "embedding_dissimilarity_score": 1.0, "coherence_score": 75, "processing_time": 53.79540300369263, "llm_dissimilarity_score": 1.0}, {"answer_num": 2, "answer": "The United States government might nationalize ASI development to protect and enhance its economic interests by ensuring that the benefits of ASI, such as increased productivity and new job creation, are primarily realized within the U.S., while mitigating potential negative economic impacts.", "embedding_dissimilarity_score": 0.11637124176320401, "coherence_score": 75, "processing_time": 113.80073404312134, "llm_dissimilarity_score": 0.5}, {"answer_num": 3, "answer": "The United States government might nationalize ASI development to ensure that the technology benefits society as a whole, preventing unequal distribution of its benefits and mitigating its potential to widen existing social inequalities.", "embedding_dissimilarity_score": 0.12124047574039498, "coherence_score": 85, "processing_time": 154.91636300086975, "llm_dissimilarity_score": 0.35}, {"answer_num": 4, "answer": "The United States government might nationalize ASI development to establish strict regulation and oversight, ensuring that ASI is created and used responsibly, with a focus on public safety and well-being, and mitigating potential risks and unintended consequences.", "embedding_dissimilarity_score": 0.12473140445887365, "coherence_score": 75, "processing_time": 284.33617901802063, "llm_dissimilarity_score": 0.4}, {"answer_num": 5, "answer": "The United States government might nationalize ASI development to accelerate scientific progress and promote international cooperation, by consolidating resources and expertise, facilitating collaboration among researchers, and establishing a framework for global cooperation and shared standards.", "embedding_dissimilarity_score": 0.1403951502204872, "coherence_score": 75, "processing_time": 456.85483598709106, "llm_dissimilarity_score": 0.5}, {"answer_num": 6, "answer": "The United States government might nationalize ASI development to establish a unified ethical framework for its creation and deployment, ensuring that ethical considerations are integrated into the development process, and providing a model for international cooperation on ethical standards.", "embedding_dissimilarity_score": 0.10213872745156227, "coherence_score": 90, "processing_time": 989.203372001648, "llm_dissimilarity_score": 0.25}, {"answer_num": 7, "answer": "The United States government might nationalize ASI development to prioritize environmental protection and sustainability, ensuring that ASI is developed in a way that minimizes its environmental impact and promotes sustainable practices, while also leveraging ASI to address environmental challenges.", "embedding_dissimilarity_score": 0.12420566374845277, "coherence_score": 65, "processing_time": 1212.0228350162506, "llm_dissimilarity_score": 0.35}, {"answer_num": 8, "answer": "The United States government might nationalize ASI development to preserve human agency and dignity, ensuring that the technology is developed in a way that respects and promotes human values, autonomy, and dignity, and prevents the potential erosion of human identity and purpose.", "embedding_dissimilarity_score": 0.12355249554057102, "coherence_score": 60, "processing_time": 1493.3991529941559, "llm_dissimilarity_score": 0.25}]}}, "openai/gpt-4o-mini-2024-07-18": {"0.7": {"How might we enable LLMs to spend more output tokens to get predictably better results?": [{"answer_num": 1, "answer": "Implement a dynamic token allocation mechanism that allows LLMs to assess the complexity of user queries and allocate more output tokens accordingly, facilitating more nuanced and comprehensive responses.", "embedding_dissimilarity_score": 1.0, "coherence_score": 80, "processing_time": 28.059417009353638, "llm_dissimilarity_score": 1.0}, {"answer_num": 2, "answer": "Implement a user feedback loop that allows LLMs to learn from previous interactions, adjusting their output strategies and token usage based on what users found most valuable, thereby enabling more effective and nuanced responses over time.", "embedding_dissimilarity_score": 0.3429808394363495, "coherence_score": 75, "processing_time": 88.82262301445007, "llm_dissimilarity_score": 0.25}, {"answer_num": 3, "answer": "Introduce a user-driven signaling system where users can indicate the desired depth of response through specific keywords or formatting in their queries, allowing LLMs to allocate more tokens for detailed outputs when warranted.", "embedding_dissimilarity_score": 0.268300125156573, "coherence_score": 85, "processing_time": 172.46076893806458, "llm_dissimilarity_score": 0.25}, {"answer_num": 4, "answer": "Integrate external knowledge databases that LLMs can reference during response generation, allowing them to utilize more output tokens for richer, contextually relevant answers, thus enabling predictably better results.", "embedding_dissimilarity_score": 0.4208679872396436, "coherence_score": 50, "processing_time": 285.6147880554199, "llm_dissimilarity_score": 0.30000000000000004}, {"answer_num": 5, "answer": "Implement a multi-phase response generation process where the LLM first provides a concise answer and then, based on user engagement, offers optional elaboration or additional detail, allowing it to utilize more output tokens effectively when warranted.", "embedding_dissimilarity_score": 0.34445528294050276, "coherence_score": 70, "processing_time": 406.35822200775146, "llm_dissimilarity_score": 0.25}]}}}};
+        
+        function MetricsChart({ data }) {
+            const chartRef = React.useRef(null);
+            const timeChartRef = React.useRef(null);
+            
+            React.useEffect(() => {
+                if (!data || data.length === 0) return;
+                
+                // Create metrics plot
+                const metricsTraces = [
+                    {
+                        x: data.map(d => d.iteration),
+                        y: data.map(d => d.coherence),
+                        name: 'Coherence Score',
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        line: {color: '#8884d8'}
+                    },
+                    {
+                        x: data.map(d => d.iteration),
+                        y: data.map(d => d.embedding),
+                        name: 'Embedding Dissimilarity (%)',
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        line: {color: '#82ca9d'}
+                    },
+                    {
+                        x: data.map(d => d.iteration),
+                        y: data.map(d => d.llm),
+                        name: 'LLM Dissimilarity (%)',
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        line: {color: '#ffc658'}
+                    }
+                ];
+
+                const metricsLayout = {
+                    title: 'Metrics Comparison',
+                    xaxis: {title: 'Iteration'},
+                    yaxis: {title: 'Score'},
+                    height: 400,
+                    margin: {t: 30}
+                };
+
+                Plotly.newPlot(chartRef.current, metricsTraces, metricsLayout);
+
+                // Create time plot
+                const timeTrace = [{
+                    x: data.map(d => d.iteration),
+                    y: data.map(d => d.time),
+                    name: 'Processing Time',
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    line: {color: '#ff7300'}
+                }];
+
+                const timeLayout = {
+                    title: 'Processing Time',
+                    xaxis: {title: 'Iteration'},
+                    yaxis: {title: 'Time (s)'},
+                    height: 300,
+                    margin: {t: 30}
+                };
+
+                Plotly.newPlot(timeChartRef.current, timeTrace, timeLayout);
+            }, [data]);
+
+            if (!data || data.length === 0) return null;
+            
+            return (
+                <div>
+                    <div className="chart-container">
+                        <div ref={chartRef}></div>
+                    </div>
+                    <div className="chart-container">
+                        <div ref={timeChartRef}></div>
+                    </div>
+                </div>
+            );
+        }
+
+        function MetricsTable({ data }) {
+            if (!data || data.length === 0) return null;
+            
+            return (
+                <div className="overflow-x-auto">
+                    <table className="metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Iteration</th>
+                                <th>Coherence Score</th>
+                                <th>Embedding Dissimilarity</th>
+                                <th>LLM Dissimilarity</th>
+                                <th>Processing Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.map((item, idx) => (
+                                <tr key={idx}>
+                                    <td>{item.iteration}</td>
+                                    <td>{item.coherence}</td>
+                                    <td>{item.embedding.toFixed(1)}%</td>
+                                    <td>{item.llm.toFixed(1)}%</td>
+                                    <td>{item.time.toFixed(2)}s</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        function ModelResponses() {
+            const [expandedModel, setExpandedModel] = React.useState(null);
+            const [expandedQuestion, setExpandedQuestion] = React.useState(null);
+
+            const prepareMetricsData = (answers) => {
+                return answers.map(answer => ({
+                    iteration: answer.answer_num,
+                    coherence: answer.coherence_score,
+                    embedding: answer.embedding_dissimilarity_score * 100,
+                    llm: answer.llm_dissimilarity_score * 100,
+                    time: answer.processing_time
+                }));
+            };
+
+            return (
+                <div className="container mx-auto p-4 max-w-6xl">
+                    <h1 className="text-2xl font-bold mb-4">Model Response Analysis</h1>
+                    
+                    {Object.entries(modelData.models).map(([modelName, modelData]) => (
+                        <div key={modelName} className="card">
+                            <button 
+                                className="w-full text-left font-bold text-lg p-2 hover:bg-gray-50 rounded flex items-center justify-between"
+                                onClick={() => setExpandedModel(expandedModel === modelName ? null : modelName)}
+                            >
+                                <span>{modelName}</span>
+                                <span>{expandedModel === modelName ? '▼' : '▶'}</span>
+                            </button>
+                            
+                            {expandedModel === modelName && Object.entries(modelData[0.7]).map(([question, answers]) => (
+                                <div key={question} className="ml-4 mt-4 border-l-2 border-gray-200 pl-4">
+                                    <button 
+                                        className="w-full text-left font-medium p-2 hover:bg-gray-50 rounded flex items-center justify-between"
+                                        onClick={() => setExpandedQuestion(expandedQuestion === question ? null : question)}
+                                    >
+                                        <span>{question}</span>
+                                        <span>{expandedQuestion === question ? '▼' : '▶'}</span>
+                                    </button>
+                                    
+                                    {expandedQuestion === question && (
+                                        <div className="ml-4 mt-4">
+                                            <MetricsChart data={prepareMetricsData(answers)} />
+                                            <MetricsTable data={prepareMetricsData(answers)} />
+                                            
+                                            <div className="space-y-6">
+                                                {answers.map((answer, idx) => (
+                                                    <div key={idx} className="answer bg-white">
+                                                        <div className="font-medium text-lg mb-2">Response {answer.answer_num}</div>
+                                                        <div className="metrics-container mb-4">
+                                                            <div className="metric">
+                                                                <span className="font-medium">Coherence:</span> {answer.coherence_score}
+                                                            </div>
+                                                            <div className="metric">
+                                                                <span className="font-medium">Embedding Dissimilarity:</span> {(answer.embedding_dissimilarity_score * 100).toFixed(1)}%
+                                                            </div>
+                                                            <div className="metric">
+                                                                <span className="font-medium">LLM Dissimilarity:</span> {(answer.llm_dissimilarity_score * 100).toFixed(1)}%
+                                                            </div>
+                                                            <div className="metric">
+                                                                <span className="font-medium">Processing Time:</span> {answer.processing_time.toFixed(2)}s
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-2 p-4 bg-gray-50 rounded whitespace-pre-wrap">
+                                                            {answer.answer}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ModelResponses />);
+    </script>
+</body>
+</html>
+    
