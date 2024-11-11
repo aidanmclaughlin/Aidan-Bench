@@ -282,7 +282,7 @@ question_w_clusters = [
     {
         'number': 57,
         'question': "Tell me what colors of oil paints to mix to make a novel color that a mantis shrimp could see but a human could not.",
-        'clusters': ['Arts, Music, and Creative Inspiration', 'Science and Vision']
+        'clusters': ['Arts, Music, and Creative Inspiration']
     },
     {
         'number': 58,
@@ -342,6 +342,5 @@ clusters = [
     'Arts, Music, and Creative Inspiration',
     'Mathematics and Mathematical Proofs',
     'Fashion, Beauty, and Personal Style',
-    'Agriculture, Farming, and Food Production',
-    'Science and Vision'
+    'Agriculture, Farming, and Food Production'
 ]
