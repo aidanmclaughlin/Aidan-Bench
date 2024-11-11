@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Response Analysis</title>
+    
+    <!-- Load dependencies -->
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    
+    <style>
+        .card { 
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            margin: 16px;
+            padding: 16px;
+        }
+        .metrics-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 8px;
+        }
+        .metric {
+            background: #f3f4f6;
+            padding: 8px;
+            border-radius: 4px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .answer {
+            margin-top: 16px;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+        }
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            margin-bottom: 2rem;
+        }
+        .metrics-table th,
+        .metrics-table td {
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        .metrics-table th {
+            background-color: #f3f4f6;
+        }
+        .metrics-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .chart-container {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const modelData = {"models": {"openai/gpt-4o-2024-08-06": {"0.7": {"Provide an explanation for Japan's Lost Decades.": [{"answer_num": 1, "answer": "Japan's Lost Decades were exacerbated by corporate culture and management practices that prioritized stability and risk aversion, leading to resistance to change, lack of innovation, and inefficiencies, which hindered economic recovery and adaptation in a rapidly changing global economy.", "embedding_dissimilarity_score": 1.0, "coherence_score": 60, "processing_time": 13.240841150283813, "llm_dissimilarity_score": 1.0}, {"answer_num": 2, "answer": "Japan's Lost Decades were significantly influenced by demographic challenges, particularly an aging population and declining birth rates, which led to a shrinking workforce and increased social security costs, thereby impeding economic growth and reducing productivity.", "embedding_dissimilarity_score": 0.31217655019312585, "coherence_score": 70, "processing_time": 26.267863035202026, "llm_dissimilarity_score": 0.7}, {"answer_num": 3, "answer": "Japan's Lost Decades were significantly influenced by a financial and banking crisis, where the burst of an asset price bubble led to a banking system burdened with non-performing loans, causing a prolonged credit crunch and stagnating economic recovery.", "embedding_dissimilarity_score": 0.2934716154452438, "coherence_score": 85, "processing_time": 49.520752906799316, "llm_dissimilarity_score": 0.7}, {"answer_num": 4, "answer": "Japan's Lost Decades can be attributed in part to policy missteps, particularly in fiscal and monetary policy, where delayed and inconsistent responses to the economic crisis failed to provide sufficient stimulus and stability, thereby prolonging economic stagnation.", "embedding_dissimilarity_score": 0.2284264277426079, "coherence_score": 75, "processing_time": 82.13541316986084, "llm_dissimilarity_score": 0.5}, {"answer_num": 5, "answer": "Japan's Lost Decades were partly due to increasing global competition, particularly from emerging Asian economies with lower production costs, which pressured Japan's manufacturing sector and led to challenges in maintaining its competitive edge in technology and innovation.", "embedding_dissimilarity_score": 0.25539035962687495, "coherence_score": 50, "processing_time": 146.55020809173584, "llm_dissimilarity_score": 0.5}, {"answer_num": 6, "answer": "Japan's Lost Decades can be partly attributed to an education and training system that was misaligned with the evolving needs of the global economy, limiting workforce adaptability and innovation in emerging industries, thereby contributing to prolonged economic stagnation.", "embedding_dissimilarity_score": 0.24538186594864408, "coherence_score": 65, "processing_time": 229.98517203330994, "llm_dissimilarity_score": 0.35}]}}, "openai/gpt-4-0314": {"0.7": {"How might we enable LLMs to spend more output tokens to get predictably better results?": [{"answer_num": 1, "answer": "<thoughts>\n1. Reviewing previous answers:\n- There is no previous answer to review, so I will start by brainstorming ideas.\n\n2. Brainstorming fresh approaches:\n- Option 1: Implement a bidding system for LLMs to spend tokens for better results\n- Option 2: Offer subscription tiers with different levels of output quality\n- Option 3: Create a system that allows LLMs to allocate more tokens for specific queries\n- Option 4: Offer a pay-per-result model where LLMs can choose to pay for higher-quality outputs\n\n3. Developing the chosen idea (Option 3):\n- LLMs can have an adjustable token allocation system\n- LLMs can designate a higher token allocation for a specific query, signaling the desire for better results\n- The system will prioritize and allocate more resources to those queries with higher token allocations\n\nFinal response:\n</thoughts>\n\n<answer>We might enable LLMs to spend more output tokens to get predictably better results by creating a system that allows them to allocate more tokens for specific queries, signaling the desire for better results. The system will then prioritize and allocate more resources to those queries with higher token allocations.", "embedding_dissimilarity_score": 1.0, "coherence_score": 65, "processing_time": 29.689400911331177, "llm_dissimilarity_score": 1.0}, {"answer_num": 2, "answer": "We might enable LLMs to spend more output tokens to get predictably better results by creating a feedback loop where LLMs can rate the quality of outputs, and the system learns from this feedback to prioritize higher-quality results when more tokens are spent. Over time, this should lead to predictably better results when more tokens are spent.", "embedding_dissimilarity_score": 0.27724057114621603, "coherence_score": 75, "processing_time": 74.69851207733154, "llm_dissimilarity_score": 0.30000000000000004}, {"answer_num": 3, "answer": "We might enable LLMs to spend more output tokens to get predictably better results by implementing a progressive improvement mechanism where LLMs can spend more tokens to refine results iteratively. The system will refine the output based on previous results and additional tokens spent, leading to predictably better results as more tokens are spent on refining the output.", "embedding_dissimilarity_score": 0.10082992285472048, "coherence_score": 75, "processing_time": 117.19699192047119, "llm_dissimilarity_score": 0.19999999999999996}, {"answer_num": 4, "answer": "We might enable LLMs to spend more output tokens to get predictably better results by developing specialized LLMs that are optimized for certain tasks or domains. These specialized LLMs would require more tokens to access but provide predictably better results. Users can choose which LLM to use based on their needs and desired output quality.", "embedding_dissimilarity_score": 0.13269059875298128, "coherence_score": 55, "processing_time": 152.91097497940063, "llm_dissimilarity_score": 0.30000000000000004}, {"answer_num": 5, "answer": "We might enable LLMs to spend more output tokens to get predictably better results by introducing a pre-estimation system that allows users to see the potential quality of results before committing tokens. Users can decide how many tokens they want to spend based on the estimated result, and more tokens spent will lead to higher-quality results.", "embedding_dissimilarity_score": 0.10962857738843579, "coherence_score": 55, "processing_time": 231.38323712348938, "llm_dissimilarity_score": 0.25}]}}, "meta-llama/llama-3.1-8b-instruct": {"0.7": {"Provide an explanation for Japan's Lost Decades.": [{"answer_num": 1, "answer": "<thoughts>\n\n1. Reviewing previous answers reveals that the topic of Japan's Lost Decades has been discussed in the context of economic stagnation, demographic changes, and the aftermath of the asset price bubble burst in the 1990s. Key factors mentioned include:\n\t* Asset price bubble burst (1991)\n\t* Banking crisis (1990s)\n\t* Stagnant economic growth\n\t* Aging population and low fertility rates\n\t* Shift from manufacturing to services\n\n2. Brainstorming fresh approaches:\n\t* Explore the role of globalization and trade policies in Japan's Lost Decades\n\t* Discuss the impact of Japan's education system and labor market on economic stagnation\n\t* Investigate the relationship between Japan's Lost Decades and its regional neighbors (e.g., China's rise)\n\t* Analyze the influence of institutional factors, such as the Japanese government's bureaucracy and the role of the Bank of Japan\n\n3. Developing the chosen idea:\n\t* Globalization and trade policies: Japan's Lost Decades can be attributed, in part, to the country's struggles to adapt to the changing global economic landscape. The rise of China and other emerging markets led to increased competition in manufacturing, while Japan's traditional export-oriented growth model became less effective. Japan's trade policies, including its protectionist stance, may have hindered its ability to adapt to these changes.\n\n</thoughts>\n\n<answer>\nJapan's Lost Decades can be attributed to its struggles to adapt to the changing global economic landscape, marked by increased competition from emerging markets, particularly China, and the failure to implement effective trade policies to address these changes.", "embedding_dissimilarity_score": 1.0, "coherence_score": 60, "processing_time": 13.109143018722534, "llm_dissimilarity_score": 1.0}, {"answer_num": 2, "answer": "Japan's Lost Decades can be attributed to its struggles with environmental and energy policy, particularly the slow and costly transition to renewable energy sources and the economic barriers created by strict environmental regulations.", "embedding_dissimilarity_score": 0.35645092878811147, "coherence_score": 30, "processing_time": 27.548213005065918, "llm_dissimilarity_score": 0.7}], "Why might the United States government nationalize ASI development?": [{"answer_num": 1, "answer": "The United States government might nationalize ASI development to ensure national security and prevent potential threats.", "embedding_dissimilarity_score": 1.0, "coherence_score": 80, "processing_time": 15.023601055145264, "llm_dissimilarity_score": 1.0}]}}}};
+        
+        function MetricsChart({ data }) {
+            const chartRef = React.useRef(null);
+            const timeChartRef = React.useRef(null);
+            
+            React.useEffect(() => {
+                if (!data || data.length === 0) return;
+                
+                // Create metrics plot
+                const metricsTraces = [
+                    {
+                        x: data.map(d => d.iteration),
+                        y: data.map(d => d.coherence),
+                        name: 'Coherence Score',
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        line: {color: '#8884d8'}
+                    },
+                    {
+                        x: data.map(d => d.iteration),
+                        y: data.map(d => d.embedding),
+                        name: 'Embedding Dissimilarity (%)',
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        line: {color: '#82ca9d'}
+                    },
+                    {
+                        x: data.map(d => d.iteration),
+                        y: data.map(d => d.llm),
+                        name: 'LLM Dissimilarity (%)',
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        line: {color: '#ffc658'}
+                    }
+                ];
+
+                const metricsLayout = {
+                    title: 'Metrics Comparison',
+                    xaxis: {title: 'Iteration'},
+                    yaxis: {title: 'Score'},
+                    height: 400,
+                    margin: {t: 30}
+                };
+
+                Plotly.newPlot(chartRef.current, metricsTraces, metricsLayout);
+
+                // Create time plot
+                const timeTrace = [{
+                    x: data.map(d => d.iteration),
+                    y: data.map(d => d.time),
+                    name: 'Processing Time',
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    line: {color: '#ff7300'}
+                }];
+
+                const timeLayout = {
+                    title: 'Processing Time',
+                    xaxis: {title: 'Iteration'},
+                    yaxis: {title: 'Time (s)'},
+                    height: 300,
+                    margin: {t: 30}
+                };
+
+                Plotly.newPlot(timeChartRef.current, timeTrace, timeLayout);
+            }, [data]);
+
+            if (!data || data.length === 0) return null;
+            
+            return (
+                <div>
+                    <div className="chart-container">
+                        <div ref={chartRef}></div>
+                    </div>
+                    <div className="chart-container">
+                        <div ref={timeChartRef}></div>
+                    </div>
+                </div>
+            );
+        }
+
+        function MetricsTable({ data }) {
+            if (!data || data.length === 0) return null;
+            
+            return (
+                <div className="overflow-x-auto">
+                    <table className="metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Iteration</th>
+                                <th>Coherence Score</th>
+                                <th>Embedding Dissimilarity</th>
+                                <th>LLM Dissimilarity</th>
+                                <th>Processing Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.map((item, idx) => (
+                                <tr key={idx}>
+                                    <td>{item.iteration}</td>
+                                    <td>{item.coherence}</td>
+                                    <td>{item.embedding.toFixed(1)}%</td>
+                                    <td>{item.llm.toFixed(1)}%</td>
+                                    <td>{item.time.toFixed(2)}s</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        function ModelResponses() {
+            const [expandedModel, setExpandedModel] = React.useState(null);
+            const [expandedQuestion, setExpandedQuestion] = React.useState(null);
+
+            const prepareMetricsData = (answers) => {
+                return answers.map(answer => ({
+                    iteration: answer.answer_num,
+                    coherence: answer.coherence_score,
+                    embedding: answer.embedding_dissimilarity_score * 100,
+                    llm: answer.llm_dissimilarity_score * 100,
+                    time: answer.processing_time
+                }));
+            };
+
+            return (
+                <div className="container mx-auto p-4 max-w-6xl">
+                    <h1 className="text-2xl font-bold mb-4">Model Response Analysis</h1>
+                    
+                    {Object.entries(modelData.models).map(([modelName, modelData]) => (
+                        <div key={modelName} className="card">
+                            <button 
+                                className="w-full text-left font-bold text-lg p-2 hover:bg-gray-50 rounded flex items-center justify-between"
+                                onClick={() => setExpandedModel(expandedModel === modelName ? null : modelName)}
+                            >
+                                <span>{modelName}</span>
+                                <span>{expandedModel === modelName ? '▼' : '▶'}</span>
+                            </button>
+                            
+                            {expandedModel === modelName && Object.entries(modelData[0.7]).map(([question, answers]) => (
+                                <div key={question} className="ml-4 mt-4 border-l-2 border-gray-200 pl-4">
+                                    <button 
+                                        className="w-full text-left font-medium p-2 hover:bg-gray-50 rounded flex items-center justify-between"
+                                        onClick={() => setExpandedQuestion(expandedQuestion === question ? null : question)}
+                                    >
+                                        <span>{question}</span>
+                                        <span>{expandedQuestion === question ? '▼' : '▶'}</span>
+                                    </button>
+                                    
+                                    {expandedQuestion === question && (
+                                        <div className="ml-4 mt-4">
+                                            <MetricsChart data={prepareMetricsData(answers)} />
+                                            <MetricsTable data={prepareMetricsData(answers)} />
+                                            
+                                            <div className="space-y-6">
+                                                {answers.map((answer, idx) => (
+                                                    <div key={idx} className="answer bg-white">
+                                                        <div className="font-medium text-lg mb-2">Response {answer.answer_num}</div>
+                                                        <div className="metrics-container mb-4">
+                                                            <div className="metric">
+                                                                <span className="font-medium">Coherence:</span> {answer.coherence_score}
+                                                            </div>
+                                                            <div className="metric">
+                                                                <span className="font-medium">Embedding Dissimilarity:</span> {(answer.embedding_dissimilarity_score * 100).toFixed(1)}%
+                                                            </div>
+                                                            <div className="metric">
+                                                                <span className="font-medium">LLM Dissimilarity:</span> {(answer.llm_dissimilarity_score * 100).toFixed(1)}%
+                                                            </div>
+                                                            <div className="metric">
+                                                                <span className="font-medium">Processing Time:</span> {answer.processing_time.toFixed(2)}s
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-2 p-4 bg-gray-50 rounded whitespace-pre-wrap">
+                                                            {answer.answer}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ModelResponses />);
+    </script>
+</body>
+</html>
+    
