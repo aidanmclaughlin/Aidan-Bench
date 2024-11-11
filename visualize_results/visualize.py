@@ -19,7 +19,7 @@ def create_visualization(pkl_path):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Model Response Analysis</title>
+    <title>AidanBench Visualizer</title>
     
     <!-- Load dependencies -->
     <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
