@@ -6,8 +6,11 @@ import numpy as np
 import pickle
 from filelock import FileLock
 import concurrent.futures
+from threading import Lock
 
 judge_model = "anthropic/claude-3.5-sonnet"
+
+file_lock = Lock()
 
 
 def benchmark_question(question: str, model_name: str, temperature: float, chain_of_thought: bool = False, use_llm: bool = False):
@@ -107,8 +110,7 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
             break
 
     if new_answers_data:
-        model_results[question].extend(new_answers_data)
-        _save_results(results)
+        _update_results(model_name, temperature, question, new_answers_data)
 
     print(f"Total Embedding Novelty Score: {total_novelty_score}")
 
@@ -122,7 +124,7 @@ def _ensure_result_structure(results: dict, model_name: str, temperature: float,
         results['models'][model_name][temperature][question] = []
 
 
-def _save_results(results: dict, filename: str = 'novelty_model_test.pkl'):
+def _save_results(results: dict, filename: str = 'results.pkl'):
     lockfile = f"{filename}.lock"
     with FileLock(lockfile):
         with open(filename, 'wb') as f:
@@ -170,7 +172,7 @@ def _get_novelty_score(new_answer: str, previous_answers: list) -> float:
     return 1 - max(similarities)
 
 
-def _load_results(filename: str = 'novelty_model_test.pkl') -> dict:
+def _load_results(filename: str = 'results.pkl') -> dict:
     lockfile = f"{filename}.lock"
     try:
         with FileLock(lockfile):
@@ -178,3 +180,11 @@ def _load_results(filename: str = 'novelty_model_test.pkl') -> dict:
                 return pickle.load(f)
     except FileNotFoundError:
         return {'models': {}}
+
+
+def _update_results(model_name: str, temperature: float, question: str, new_answers_data: list, filename: str = 'results.pkl'):
+    with file_lock:
+        results = _load_results(filename)
+        _ensure_result_structure(results, model_name, temperature, question)
+        results['models'][model_name][temperature][question].extend(new_answers_data)
+        _save_results(results, filename)
