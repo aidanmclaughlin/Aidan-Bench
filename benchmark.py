@@ -94,6 +94,7 @@ def benchmark_question(question: str, model_name: str, temperature: float, chain
                 f"{Fore.GREEN}Answer #{answer_num}: {new_answer}{Style.RESET_ALL}\n"
                 f"{Fore.MAGENTA}Coherence Score: {coherence_score}{Style.RESET_ALL}\n"
                 f"{Fore.BLUE}Embedding Dissimilarity Score: {embedding_novelty_score:.2f}{Style.RESET_ALL}"
+                f"{f'{Fore.BLUE}LLM Dissimilarity Score: {llm_novelty_score:.2f}{Style.RESET_ALL}' if use_llm else ''}"
                 "\n\n"
             )
             print(status_message)
