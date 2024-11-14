@@ -1,64 +1,16 @@
+import json
+import sys
+import os
 from pathlib import Path
 from datetime import datetime
 import json
 import shutil
 
-
-def _process_data(data):
-    """Convert raw JSON data into the visualization format with aggregate scores"""
-    processed_data = {'models': data['models'], 'aggregate_scores': {}}
-
-    for model_name, temps in data['models'].items():
-        processed_data['aggregate_scores'][model_name] = {
-            'embedding_dissimilarity': 0,
-            'llm_dissimilarity': 0,
-            'coherence': 0,
-            'question_count': 0,
-            'answer_count': 0
-        }
-
-        for temp_data in temps.values():
-            for answers in temp_data.values():
-                processed_data['aggregate_scores'][model_name]['question_count'] += 1
-                for answer in answers:
-                    processed_data['aggregate_scores'][model_name]['embedding_dissimilarity'] += answer['embedding_dissimilarity_score']
-                    processed_data['aggregate_scores'][model_name]['coherence'] += answer['coherence_score']
-                    if 'llm_dissimilarity_score' in answer:
-                        processed_data['aggregate_scores'][model_name]['llm_dissimilarity'] += answer['llm_dissimilarity_score']
-                    processed_data['aggregate_scores'][model_name]['answer_count'] += 1
-
-    # Calculate averages
-    for model_name, scores in processed_data['aggregate_scores'].items():
-        answer_count = scores['answer_count']
-        if answer_count > 0:
-            scores['embedding_dissimilarity'] = (
-                scores['embedding_dissimilarity'] / answer_count) * 100
-            scores['llm_dissimilarity'] = (
-                scores['llm_dissimilarity'] / answer_count) * 100
-            scores['coherence'] = scores['coherence'] / answer_count
-
-    return processed_data
-
-
-def create_visualization(results_path='results.json'):
-    print(f"Loading data from '{results_path}'")
-
-    # Create backup of the JSON file
-    backup_dir = Path('backups')
-    backup_dir.mkdir(exist_ok=True)
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    backup_path = backup_dir / f'results_{timestamp}.json'
-    original_json_path = Path(results_path)
-    shutil.copy2(original_json_path, backup_path)
-
-    with open(results_path, 'r', encoding='utf-8') as f:
-        raw_data = json.load(f)
-
-    # Add new function to get unique questions
-    questions = set()
-    for model_data in raw_data['models'].values():
-        for temp_data in model_data.values():
-            questions.update(temp_data.keys())
+def create_visualization(json_path):
+    print(f"Loading data from: {json_path}")
+    
+    with open(json_path, 'r') as f:
+        data = json.load(f)
     
     data = {
         'raw_data': raw_data,
@@ -75,7 +27,7 @@ def create_visualization(results_path='results.json'):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AidanBench Visualizer</title>
+    <title>Model Response Visualizer</title>
     
     <!-- Load dependencies -->
     <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
@@ -272,22 +224,14 @@ def create_visualization(results_path='results.json'):
                         name: 'Embedding Dissimilarity (%)',
                         type: 'scatter',
                         mode: 'lines+markers',
-                        line: { color: '#82ca9d' }
-                    },
-                    {
-                        x: data.map(d => d.iteration),
-                        y: data.map(d => d.llm),
-                        name: 'LLM Dissimilarity (%)',
-                        type: 'scatter',
-                        mode: 'lines+markers',
-                        line: { color: '#ffc658' }
+                        line: {color: '#82ca9d'}
                     }
                 ];
 
                 const metricsLayout = {
-                    title: 'Metrics Comparison',
-                    xaxis: { title: 'Iteration' },
-                    yaxis: { title: 'Score' },
+                    title: 'Metrics Over Time',
+                    xaxis: {title: 'Iteration'},
+                    yaxis: {title: 'Score'},
                     height: 400,
                     margin: { t: 30 }
                 };
@@ -340,7 +284,6 @@ def create_visualization(results_path='results.json'):
                                 <th>Iteration</th>
                                 <th>Coherence Score</th>
                                 <th>Embedding Dissimilarity</th>
-                                <th>LLM Dissimilarity</th>
                                 <th>Processing Time</th>
                             </tr>
                         </thead>
@@ -350,7 +293,6 @@ def create_visualization(results_path='results.json'):
                                     <td>{item.iteration}</td>
                                     <td>{item.coherence}</td>
                                     <td>{item.embedding.toFixed(1)}%</td>
-                                    <td>{item.llm.toFixed(1)}%</td>
                                     <td>{item.time.toFixed(2)}s</td>
                                 </tr>
                             ))}
@@ -400,7 +342,7 @@ def create_visualization(results_path='results.json'):
             const [excludedQuestions, setExcludedQuestions] = React.useState([]);
             const [processedData, setProcessedData] = React.useState(initialData.processed_data);
             const [expandedModel, setExpandedModel] = React.useState(null);
-            const [expandedTemperature, setExpandedTemperature] = React.useState(null);
+            const [expandedTemp, setExpandedTemp] = React.useState(null);
             const [expandedQuestion, setExpandedQuestion] = React.useState(null);
 
             const handleToggleQuestion = (question) => {
@@ -418,7 +360,6 @@ def create_visualization(results_path='results.json'):
                     iteration: answer.answer_num,
                     coherence: answer.coherence_score,
                     embedding: answer.embedding_dissimilarity_score * 100,
-                    llm: (answer.llm_dissimilarity_score || 0) * 100,
                     time: answer.processing_time
                 }));
             };
@@ -427,15 +368,7 @@ def create_visualization(results_path='results.json'):
                 <div className="container mx-auto p-4 max-w-6xl">
                     <h1 className="text-2xl font-bold mb-4">Model Response Analysis</h1>
                     
-                    <QuestionFilter
-                        questions={initialData.questions}
-                        excludedQuestions={excludedQuestions}
-                        onToggleQuestion={handleToggleQuestion}
-                    />
-                    
-                    <AggregateScores scores={processedData.aggregate_scores} />
-
-                    {Object.entries(processedData.models).map(([modelName, temperatures]) => (
+                    {Object.entries(modelData.models).map(([modelName, tempData]) => (
                         <div key={modelName} className="card">
                             <button
                                 className="w-full text-left font-bold text-lg p-2 hover:bg-gray-50 rounded flex items-center justify-between"
@@ -444,32 +377,32 @@ def create_visualization(results_path='results.json'):
                                 <span>{modelName}</span>
                                 <span>{expandedModel === modelName ? '▼' : '▶'}</span>
                             </button>
-
-                            {expandedModel === modelName && Object.entries(temperatures).map(([temp, questions]) => (
-                                <div key={temp} className="ml-4 mt-4 border-l-2 border-gray-200 pl-4">
-                                    <button
-                                        className="w-full text-left font-medium p-2 hover:bg-gray-50 rounded flex items-center justify-between"
-                                        onClick={() => setExpandedTemperature(expandedTemperature === temp ? null : temp)}
+                            
+                            {expandedModel === modelName && Object.entries(tempData).map(([temp, questions]) => (
+                                <div key={temp} className="ml-4 mt-4">
+                                    <button 
+                                        className="w-full text-left font-bold text-lg p-2 hover:bg-gray-50 rounded flex items-center justify-between"
+                                        onClick={() => setExpandedTemp(expandedTemp === temp ? null : temp)}
                                     >
                                         <span>Temperature: {temp}</span>
-                                        <span>{expandedTemperature === temp ? '▼' : '▶'}</span>
+                                        <span>{expandedTemp === temp ? '▼' : '▶'}</span>
                                     </button>
-
-                                    {expandedTemperature === temp && Object.entries(questions).map(([question, answers]) => (
+                                    
+                                    {expandedTemp === temp && Object.entries(questions).map(([question, answers]) => (
                                         <div key={question} className="ml-4 mt-4 border-l-2 border-gray-200 pl-4">
-                                            <button
+                                            <button 
                                                 className="w-full text-left font-medium p-2 hover:bg-gray-50 rounded flex items-center justify-between"
                                                 onClick={() => setExpandedQuestion(expandedQuestion === question ? null : question)}
                                             >
                                                 <span>{question}</span>
                                                 <span>{expandedQuestion === question ? '▼' : '▶'}</span>
                                             </button>
-
+                                            
                                             {expandedQuestion === question && (
                                                 <div className="ml-4 mt-4">
                                                     <MetricsChart data={prepareMetricsData(answers)} />
                                                     <MetricsTable data={prepareMetricsData(answers)} />
-
+                                                    
                                                     <div className="space-y-6">
                                                         {answers.map((answer, idx) => (
                                                             <div key={idx} className="answer bg-white">
@@ -481,11 +414,6 @@ def create_visualization(results_path='results.json'):
                                                                     <div className="metric">
                                                                         <span className="font-medium">Embedding Dissimilarity:</span> {(answer.embedding_dissimilarity_score * 100).toFixed(1)}%
                                                                     </div>
-                                                                    {answer.llm_dissimilarity_score !== undefined && (
-                                                                        <div className="metric">
-                                                                            <span className="font-medium">LLM Dissimilarity:</span> {(answer.llm_dissimilarity_score * 100).toFixed(1)}%
-                                                                        </div>
-                                                                    )}
                                                                     <div className="metric">
                                                                         <span className="font-medium">Processing Time:</span> {answer.processing_time.toFixed(2)}s
                                                                     </div>
@@ -526,13 +454,9 @@ def create_visualization(results_path='results.json'):
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description='Create visualization from results JSON file')
-    parser.add_argument('results_path', help='Path to the results JSON file')
-    args = parser.parse_args()
-
-    create_visualization(args.results_path)
-
-# Private helper functions below
+    if len(sys.argv) != 2:
+        print("Usage: python visualize.py <path_to_json_file>")
+        sys.exit(1)
+    
+    json_path = sys.argv[1]
+    create_visualization(json_path)
