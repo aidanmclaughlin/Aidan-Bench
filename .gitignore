@@ -1,5 +1,4 @@
 __pycache__/
 .DS_Store
 *.csv
-*.json
 aidan_api_key.sh
