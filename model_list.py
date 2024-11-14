@@ -68,9 +68,9 @@ model_prices = [
 ]
 
 model_subset = [
-    "gpt-4-turbo",
-    "gpt-4o-2024-08-06",
-    "gpt-4o-mini",
-    "o1-mini",      
-    "o1-preview"
+    "openai/gpt-4o-mini-2024-07-18",
+    "meta-llama/llama-3.1-70b-instruct",
+    "google/gemini-flash-1.5-8b",
+    "anthropic/claude-3.5-sonnet",  # New Sonnet
+    "gpt-4-turbo"
 ]
