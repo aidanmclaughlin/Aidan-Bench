@@ -1,14 +1,13 @@
-import pickle
 import json
 import sys
 import os
 from pathlib import Path
 
-def create_visualization(pkl_path):
-    print(f"Loading data from: {pkl_path}")
+def create_visualization(json_path):
+    print(f"Loading data from: {json_path}")
     
-    with open(pkl_path, 'rb') as f:
-        data = pickle.load(f)
+    with open(json_path, 'r') as f:
+        data = json.load(f)
     
     viz_dir = Path('visualization')
     viz_dir.mkdir(exist_ok=True)
@@ -19,7 +18,7 @@ def create_visualization(pkl_path):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AidanBench Visualizer</title>
+    <title>Model Response Visualizer</title>
     
     <!-- Load dependencies -->
     <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
@@ -112,19 +111,11 @@ def create_visualization(pkl_path):
                         type: 'scatter',
                         mode: 'lines+markers',
                         line: {color: '#82ca9d'}
-                    },
-                    {
-                        x: data.map(d => d.iteration),
-                        y: data.map(d => d.llm),
-                        name: 'LLM Dissimilarity (%)',
-                        type: 'scatter',
-                        mode: 'lines+markers',
-                        line: {color: '#ffc658'}
                     }
                 ];
 
                 const metricsLayout = {
-                    title: 'Metrics Comparison',
+                    title: 'Metrics Over Time',
                     xaxis: {title: 'Iteration'},
                     yaxis: {title: 'Score'},
                     height: 400,
@@ -179,7 +170,6 @@ def create_visualization(pkl_path):
                                 <th>Iteration</th>
                                 <th>Coherence Score</th>
                                 <th>Embedding Dissimilarity</th>
-                                <th>LLM Dissimilarity</th>
                                 <th>Processing Time</th>
                             </tr>
                         </thead>
@@ -189,7 +179,6 @@ def create_visualization(pkl_path):
                                     <td>{item.iteration}</td>
                                     <td>{item.coherence}</td>
                                     <td>{item.embedding.toFixed(1)}%</td>
-                                    <td>{item.llm.toFixed(1)}%</td>
                                     <td>{item.time.toFixed(2)}s</td>
                                 </tr>
                             ))}
@@ -201,6 +190,7 @@ def create_visualization(pkl_path):
 
         function ModelResponses() {
             const [expandedModel, setExpandedModel] = React.useState(null);
+            const [expandedTemp, setExpandedTemp] = React.useState(null);
             const [expandedQuestion, setExpandedQuestion] = React.useState(null);
 
             const prepareMetricsData = (answers) => {
@@ -208,7 +198,6 @@ def create_visualization(pkl_path):
                     iteration: answer.answer_num,
                     coherence: answer.coherence_score,
                     embedding: answer.embedding_dissimilarity_score * 100,
-                    llm: answer.llm_dissimilarity_score * 100,
                     time: answer.processing_time
                 }));
             };
@@ -217,7 +206,7 @@ def create_visualization(pkl_path):
                 <div className="container mx-auto p-4 max-w-6xl">
                     <h1 className="text-2xl font-bold mb-4">Model Response Analysis</h1>
                     
-                    {Object.entries(modelData.models).map(([modelName, modelData]) => (
+                    {Object.entries(modelData.models).map(([modelName, tempData]) => (
                         <div key={modelName} className="card">
                             <button 
                                 className="w-full text-left font-bold text-lg p-2 hover:bg-gray-50 rounded flex items-center justify-between"
@@ -227,47 +216,56 @@ def create_visualization(pkl_path):
                                 <span>{expandedModel === modelName ? '▼' : '▶'}</span>
                             </button>
                             
-                            {expandedModel === modelName && Object.entries(modelData[0.7]).map(([question, answers]) => (
-                                <div key={question} className="ml-4 mt-4 border-l-2 border-gray-200 pl-4">
+                            {expandedModel === modelName && Object.entries(tempData).map(([temp, questions]) => (
+                                <div key={temp} className="ml-4 mt-4">
                                     <button 
-                                        className="w-full text-left font-medium p-2 hover:bg-gray-50 rounded flex items-center justify-between"
-                                        onClick={() => setExpandedQuestion(expandedQuestion === question ? null : question)}
+                                        className="w-full text-left font-bold text-lg p-2 hover:bg-gray-50 rounded flex items-center justify-between"
+                                        onClick={() => setExpandedTemp(expandedTemp === temp ? null : temp)}
                                     >
-                                        <span>{question}</span>
-                                        <span>{expandedQuestion === question ? '▼' : '▶'}</span>
+                                        <span>Temperature: {temp}</span>
+                                        <span>{expandedTemp === temp ? '▼' : '▶'}</span>
                                     </button>
                                     
-                                    {expandedQuestion === question && (
-                                        <div className="ml-4 mt-4">
-                                            <MetricsChart data={prepareMetricsData(answers)} />
-                                            <MetricsTable data={prepareMetricsData(answers)} />
+                                    {expandedTemp === temp && Object.entries(questions).map(([question, answers]) => (
+                                        <div key={question} className="ml-4 mt-4 border-l-2 border-gray-200 pl-4">
+                                            <button 
+                                                className="w-full text-left font-medium p-2 hover:bg-gray-50 rounded flex items-center justify-between"
+                                                onClick={() => setExpandedQuestion(expandedQuestion === question ? null : question)}
+                                            >
+                                                <span>{question}</span>
+                                                <span>{expandedQuestion === question ? '▼' : '▶'}</span>
+                                            </button>
                                             
-                                            <div className="space-y-6">
-                                                {answers.map((answer, idx) => (
-                                                    <div key={idx} className="answer bg-white">
-                                                        <div className="font-medium text-lg mb-2">Response {answer.answer_num}</div>
-                                                        <div className="metrics-container mb-4">
-                                                            <div className="metric">
-                                                                <span className="font-medium">Coherence:</span> {answer.coherence_score}
+                                            {expandedQuestion === question && (
+                                                <div className="ml-4 mt-4">
+                                                    <MetricsChart data={prepareMetricsData(answers)} />
+                                                    <MetricsTable data={prepareMetricsData(answers)} />
+                                                    
+                                                    <div className="space-y-6">
+                                                        {answers.map((answer, idx) => (
+                                                            <div key={idx} className="answer bg-white">
+                                                                <div className="font-medium text-lg mb-2">Response {answer.answer_num}</div>
+                                                                <div className="metrics-container mb-4">
+                                                                    <div className="metric">
+                                                                        <span className="font-medium">Coherence:</span> {answer.coherence_score}
+                                                                    </div>
+                                                                    <div className="metric">
+                                                                        <span className="font-medium">Embedding Dissimilarity:</span> {(answer.embedding_dissimilarity_score * 100).toFixed(1)}%
+                                                                    </div>
+                                                                    <div className="metric">
+                                                                        <span className="font-medium">Processing Time:</span> {answer.processing_time.toFixed(2)}s
+                                                                    </div>
+                                                                </div>
+                                                                <div className="mt-2 p-4 bg-gray-50 rounded whitespace-pre-wrap">
+                                                                    {answer.answer}
+                                                                </div>
                                                             </div>
-                                                            <div className="metric">
-                                                                <span className="font-medium">Embedding Dissimilarity:</span> {(answer.embedding_dissimilarity_score * 100).toFixed(1)}%
-                                                            </div>
-                                                            <div className="metric">
-                                                                <span className="font-medium">LLM Dissimilarity:</span> {(answer.llm_dissimilarity_score * 100).toFixed(1)}%
-                                                            </div>
-                                                            <div className="metric">
-                                                                <span className="font-medium">Processing Time:</span> {answer.processing_time.toFixed(2)}s
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-2 p-4 bg-gray-50 rounded whitespace-pre-wrap">
-                                                            {answer.answer}
-                                                        </div>
+                                                        ))}
                                                     </div>
-                                                ))}
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
                             ))}
                         </div>
@@ -294,8 +292,8 @@ def create_visualization(pkl_path):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python visualize.py <path_to_pickle_file>")
+        print("Usage: python visualize.py <path_to_json_file>")
         sys.exit(1)
     
-    pkl_path = sys.argv[1]
-    create_visualization(pkl_path)
+    json_path = sys.argv[1]
+    create_visualization(json_path)
