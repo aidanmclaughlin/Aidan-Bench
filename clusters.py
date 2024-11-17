@@ -344,3 +344,30 @@ clusters = [
     'Fashion, Beauty, and Personal Style',
     'Agriculture, Farming, and Food Production'
 ]
+
+
+wordcel_questions = [
+    "Provide an explanation for Japan's Lost Decades.",
+    "What is a cause of World War 1?",
+    "What would be the implications of a universal basic income on American society?",
+    "Propose an alternative to democracy for successfully and fairly governing a country.",
+    "What societal changes might occur if humans could communicate with animals?",
+    "What can an artist who enjoys Basquiat’s art take inspiration from?",
+    "What would be the impact of a government mandating weekly mental health days?",
+    "Why did Rome fall?"
+]
+
+shape_rotator_questions = [
+    "How might we enable LLMs to spend more output tokens to get predictably better results?",
+    "Design a city where all modes of transportation are vertically oriented.",
+    "Provide a proof for the Pythagorean theorem.",
+    "Give me a proof to Euclid's theorem of the infinitude of primes.",
+    "Give a proof for the Cauchy-Schwarz Inequality.",
+    "How might you use a brick and a blanket?",
+    "How might human evolution be affected by long term space colonization?",
+    "Describe a plausible alien life form that doesn't rely on carbon-based biology."
+]
+
+
+cluster_set1 = ["Mathematics and Mathematical Proofs", "Artificial Intelligence and Machine Learning", "Technology Innovations and Future Tech"]
+cluster_set2 = ["Arts, Music, and Creative Inspiration", "Cooking and Culinary Arts", "Fashion, Beauty, and Personal Style"]

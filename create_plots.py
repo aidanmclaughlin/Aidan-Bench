@@ -5,9 +5,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 from typing import Dict, List, Tuple, NamedTuple, Set
-from clusters import question_w_clusters
+from clusters import question_w_clusters, wordcel_questions, shape_rotator_questions
 from question_list import questions
 from collections import defaultdict
+from model_list import lmsys_scores, release_dates, model_scales
+
+from scipy import stats
+import adjustText
+
+from datetime import datetime
+import matplotlib.dates as mdates
 
 
 # Define company colors
@@ -776,3 +783,743 @@ def analyze_question_performance(results_file: str,
         
     return best_scores
 
+
+
+#####
+
+
+def get_max_scores(results: dict,
+                  min_embedding_threshold: float = 0.15,
+                  min_coherence_threshold: float = 15.0) -> Dict[str, Dict[str, float]]:
+    """
+    Calculate maximum scores for each model across temperatures.
+    """
+    max_scores = defaultdict(lambda: {'embedding': 0, 'coherence': 0, 'answers': 0})
+    
+    for model_name, temp_data in results['models'].items():
+        for temp, questions in temp_data.items():
+            embedding_total = 0
+            coherence_total = 0
+            valid_answers = 0
+            
+            for answers in questions.values():
+                for answer in answers:
+                    if (answer['embedding_dissimilarity_score'] >= min_embedding_threshold and 
+                        answer['coherence_score'] >= min_coherence_threshold):
+                        embedding_total += answer['embedding_dissimilarity_score']
+                        coherence_total += answer['coherence_score'] / 100
+                        valid_answers += 1
+            
+            # Update maximum scores
+            max_scores[model_name]['embedding'] = max(max_scores[model_name]['embedding'], 
+                                                    embedding_total)
+            max_scores[model_name]['coherence'] = max(max_scores[model_name]['coherence'], 
+                                                    coherence_total)
+            max_scores[model_name]['answers'] = max(max_scores[model_name]['answers'], 
+                                                  valid_answers)
+    
+    return max_scores
+
+def create_correlation_plots(results: dict,
+                           lmsys_data: List[dict],
+                           output_dir: str = 'plots',
+                           show_correlation: bool = True) -> None:
+    """
+    Create scatter plots comparing LMSYS scores with benchmark metrics.
+    """
+    
+    # Get maximum scores for each model
+    max_scores = get_max_scores(results)
+    
+    # Convert LMSYS data to dict for easier lookup
+    lmsys_dict = {item['model']: item['lmsys_score'] for item in lmsys_data}
+    
+    # Metrics to plot
+    metrics_to_plot = {
+        'embedding': 'Embedding Dissimilarity Score',
+        'coherence': 'Coherence Score',
+        'answers': 'Valid Responses'
+    }
+    
+    for metric_key, metric_name in metrics_to_plot.items():
+        # Collect data points
+        plot_data = []
+        for model, scores in max_scores.items():
+            if model in lmsys_dict:
+                plot_data.append({
+                    'model': model,
+                    'benchmark_score': scores[metric_key],
+                    'lmsys_score': lmsys_dict[model],
+                    'company': model.split('/')[0]
+                })
+        
+        if not plot_data:
+            continue
+            
+        # Create scatter plot
+        plt.figure(figsize=(12, 8))
+        
+        # Plot points and prepare correlation data
+        xs = [d['lmsys_score'] for d in plot_data]
+        ys = [d['benchmark_score'] for d in plot_data]
+        
+        # Calculate correlation if requested
+        if show_correlation and len(xs) > 1:
+            correlation, p_value = stats.pearsonr(xs, ys)
+            spearman_corr, spearman_p = stats.spearmanr(xs, ys)
+        
+        # Create scatter plot with company colors
+        for data in plot_data:
+            plt.scatter(data['lmsys_score'], data['benchmark_score'],
+                       color=COMPANY_COLORS[data['company']],
+                       s=100, alpha=0.7)
+        
+        # Add labels with smart placement
+        texts = []
+        for data in plot_data:
+            model_name = data['model'].split('/')[-1]
+            texts.append(plt.text(data['lmsys_score'], data['benchmark_score'], 
+                                model_name, fontsize=8))
+        
+        # Adjust text positions to avoid overlap
+        adjustText.adjust_text(texts, arrowprops=dict(arrowstyle='->', color='gray', alpha=0.5))
+        
+        # Add correlation information if requested
+        if show_correlation and len(xs) > 1:
+            correlation_text = f"Pearson Correlation: {correlation:.3f}\n"
+            correlation_text += f"Spearman Correlation: {spearman_corr:.3f}"
+            plt.text(0.05, 0.95, correlation_text,
+                    transform=plt.gca().transAxes,
+                    verticalalignment='top',
+                    bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Customize plot
+        plt.xlabel('LMSYS Score')
+        plt.ylabel(f'AidanBench {metric_name}')
+        plt.title(f'LMSYS Score vs AidanBench {metric_name}')
+        
+        # Add legend for companies
+        legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
+                                    markerfacecolor=color, label=company, markersize=10)
+                         for company, color in COMPANY_COLORS.items()]
+        plt.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 0.5))
+        
+        # Add grid
+        plt.grid(True, alpha=0.3)
+        
+        # Save plot
+        plt.tight_layout()
+        plt.savefig(Path(output_dir) / f'lmsys_correlation_{metric_key}.png', 
+                    dpi=300, bbox_inches='tight')
+        plt.close()
+
+def analyze_lmsys_correlation(results_file: str,
+                            lmsys_data: List[dict],
+                            output_dir: str = 'plots',
+                            show_correlation: bool = True) -> None:
+    """Main function to analyze LMSYS correlations and create plots."""
+    
+    # Load results
+    with open(results_file, 'r') as f:
+        results = json.load(f)
+    
+    # Create output directory
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    # Generate correlation plots
+    create_correlation_plots(results, lmsys_data, output_dir, show_correlation)
+
+
+
+#####
+
+
+def create_timeline_plots(results: dict,
+                        release_dates: List[dict],
+                        output_dir: str = 'plots') -> None:
+    """
+    Create scatter plots showing score evolution over time.
+    """
+    
+    # Get maximum scores for each model
+    max_scores = get_max_scores(results)
+    
+    # Convert release dates to dict and datetime objects
+    release_dict = {item['model']: datetime.strptime(item['release_date'], '%Y-%m-%d')
+                   for item in release_dates}
+    
+    # Metrics to plot
+    metrics_to_plot = {
+        'embedding': 'Embedding Dissimilarity Score',
+        'coherence': 'Coherence Score',
+        'answers': 'Valid Responses'
+    }
+    
+    for metric_key, metric_name in metrics_to_plot.items():
+        # Collect data points
+        plot_data = []
+        for model, scores in max_scores.items():
+            if model in release_dict:
+                plot_data.append({
+                    'model': model,
+                    'score': scores[metric_key],
+                    'date': release_dict[model],
+                    'company': model.split('/')[0]
+                })
+        
+        if not plot_data:
+            continue
+            
+        # Create scatter plot
+        plt.figure(figsize=(15, 8))
+        
+        # Plot points
+        for data in plot_data:
+            plt.scatter(data['date'], data['score'],
+                       color=COMPANY_COLORS[data['company']],
+                       s=100, alpha=0.7)
+        
+        # Add labels with smart placement
+        texts = []
+        for data in plot_data:
+            model_name = data['model'].split('/')[-1]
+            texts.append(plt.text(data['date'], data['score'], 
+                                model_name, fontsize=8))
+        
+        # Adjust text positions to avoid overlap
+        adjustText.adjust_text(texts, arrowprops=dict(arrowstyle='->', color='gray', alpha=0.5))
+        
+        # Customize plot
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+        plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
+        
+        # Rotate and align the tick labels so they look better
+        plt.gcf().autofmt_xdate()
+        
+        # # Add trend line
+        # dates = mdates.date2num([d['date'] for d in plot_data])
+        # scores = [d['score'] for d in plot_data]
+        # z = np.polyfit(dates, scores, 1)
+        # p = np.poly1d(z)
+        
+        # Add trend line
+        # plt.plot(
+        #     [min(dates), max(dates)],
+        #     [p(min(dates)), p(max(dates))],
+        #     "k--", alpha=0.5, label=f'Trend line'
+        # )
+        
+        plt.xlabel('Release Date')
+        plt.ylabel(f'Benchmark {metric_name}')
+        plt.title(f'Evolution of {metric_name} Over Time')
+        
+        # Add legend for companies
+        legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
+                                    markerfacecolor=color, label=company, markersize=10)
+                         for company, color in COMPANY_COLORS.items()]
+        legend_elements.append(plt.Line2D([0], [0], linestyle='--', color='k', alpha=0.5,
+                                        label='Trend line'))
+        plt.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 0.5))
+        
+        # Add grid
+        plt.grid(True, alpha=0.3)
+        
+        # Save plot
+        plt.tight_layout()
+        plt.savefig(Path(output_dir) / f'timeline_{metric_key}.png', 
+                    dpi=300, bbox_inches='tight')
+        plt.close()
+
+def analyze_timeline(results_file: str,
+                    release_dates: List[dict],
+                    output_dir: str = 'plots') -> None:
+    """Main function to analyze score evolution over time."""
+    
+    # Load results
+    with open(results_file, 'r') as f:
+        results = json.load(f)
+    
+    # Create output directory
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    # Generate timeline plots
+    create_timeline_plots(results, release_dates, output_dir)
+
+
+
+#####
+
+def calculate_scores_for_questions(results: dict,
+                                 questions: List[str],
+                                 min_embedding_threshold: float = 0.15,
+                                 min_coherence_threshold: float = 15.0) -> Dict[str, Dict[str, float]]:
+    """
+    Calculate scores for specific questions.
+    Returns dict[model_name][metric] = score
+    """
+    scores = defaultdict(lambda: {'embedding': 0, 'coherence': 0, 'answers': 0})
+    
+    for model_name, temp_data in results['models'].items():
+        model_max_scores = defaultdict(float)
+        
+        for temp, question_data in temp_data.items():
+            embedding_total = 0
+            coherence_total = 0
+            valid_answers = 0
+            
+            for question in questions:
+                if question in question_data:
+                    for answer in question_data[question]:
+                        if (answer['embedding_dissimilarity_score'] >= min_embedding_threshold and 
+                            answer['coherence_score'] >= min_coherence_threshold):
+                            embedding_total += answer['embedding_dissimilarity_score']
+                            coherence_total += answer['coherence_score'] / 100
+                            valid_answers += 1
+            
+            # Divide by number of questions to get average
+            if questions:  # Avoid division by zero
+                embedding_total /= len(questions)
+                coherence_total /= len(questions)
+                valid_answers /= len(questions)
+            
+            # Update maximum scores for this temperature
+            model_max_scores['embedding'] = max(model_max_scores['embedding'], embedding_total)
+            model_max_scores['coherence'] = max(model_max_scores['coherence'], coherence_total)
+            model_max_scores['answers'] = max(model_max_scores['answers'], valid_answers)
+        
+        # Store best scores across temperatures
+        scores[model_name] = dict(model_max_scores)
+    
+    return scores
+
+def create_question_set_comparison(results: dict,
+                                 questions_set1: List[str],
+                                 questions_set2: List[str],
+                                 output_dir: str = 'plots') -> None:
+    """
+    Create scatter plots comparing model performance between two sets of questions.
+    """    
+    # Calculate scores for both sets
+    scores_set1 = calculate_scores_for_questions(results, questions_set1)
+    scores_set2 = calculate_scores_for_questions(results, questions_set2)
+    
+    # Metrics to plot
+    metrics_to_plot = {
+        'embedding': 'Embedding Dissimilarity Score',
+        'coherence': 'Coherence Score',
+        'answers': 'Valid Responses'
+    }
+    
+    for metric_key, metric_name in metrics_to_plot.items():
+        # Collect data points
+        plot_data = []
+        for model in results['models'].keys():
+            if model in scores_set1 and model in scores_set2:
+                plot_data.append({
+                    'model': model,
+                    'score1': scores_set1[model][metric_key],
+                    'score2': scores_set2[model][metric_key],
+                    'company': model.split('/')[0]
+                })
+        
+        if not plot_data:
+            continue
+            
+        # Create scatter plot
+        plt.figure(figsize=(12, 8))
+        
+        # Get max values for axis limits
+        max_score = max(
+            max(d['score1'] for d in plot_data),
+            max(d['score2'] for d in plot_data)
+        )
+        
+        # Plot diagonal line
+        plt.plot([0, max_score * 1.1], [0, max_score * 1.1], 
+                 'k--', alpha=0.3, label='y=x')
+        
+        # Plot points
+        for data in plot_data:
+            plt.scatter(data['score1'], data['score2'],
+                       color=COMPANY_COLORS[data['company']],
+                       s=100, alpha=0.7)
+        
+        # Add labels with smart placement
+        texts = []
+        for data in plot_data:
+            model_name = data['model'].split('/')[-1]
+            texts.append(plt.text(data['score1'], data['score2'], 
+                                model_name, fontsize=8))
+        
+        # Adjust text positions to avoid overlap
+        adjustText.adjust_text(texts, arrowprops=dict(arrowstyle='->', color='gray', alpha=0.5))
+        
+        # Calculate correlation
+        scores1 = [d['score1'] for d in plot_data]
+        scores2 = [d['score2'] for d in plot_data]
+        correlation = np.corrcoef(scores1, scores2)[0, 1]
+        
+        # Add correlation text
+        plt.text(0.05, 0.95, f'Correlation: {correlation:.3f}',
+                transform=plt.gca().transAxes,
+                verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Set equal aspect ratio and limits
+        plt.axis('equal')
+        plt.xlim(0, max_score * 1.1)
+        plt.ylim(0, max_score * 1.1)
+        
+        # Labels and title
+        plt.xlabel(f'Average {metric_name} on Wordcel')
+        plt.ylabel(f'Average {metric_name} on Shape Rotator')
+        plt.title(f'Model Performance Comparison:\n{metric_name}')
+        
+        # Add legend for companies
+        legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
+                                    markerfacecolor=color, label=company, markersize=10)
+                         for company, color in COMPANY_COLORS.items()]
+        plt.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 0.5))
+        
+        # Add grid
+        plt.grid(True, alpha=0.3)
+        
+        # Save plot
+        plt.tight_layout()
+        plt.savefig(Path(output_dir) / f'question_set_comparison_{metric_key}.png', 
+                    dpi=300, bbox_inches='tight')
+        plt.close()
+
+def analyze_question_sets(results_file: str,
+                         questions_set1: List[str],
+                         questions_set2: List[str],
+                         output_dir: str = 'plots') -> None:
+    """Main function to analyze performance between question sets."""
+    
+    # Load results
+    with open(results_file, 'r') as f:
+        results = json.load(f)
+    
+    # Create output directory
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    # Generate comparison plots
+    create_question_set_comparison(results, questions_set1, questions_set2, output_dir)
+
+
+
+#####
+
+
+def get_questions_for_clusters(questions_data: List[dict], clusters: List[str]) -> List[str]:
+    """Get all questions that belong to any of the specified clusters."""
+    questions = set()
+    for q in questions_data:
+        if any(cluster in q['clusters'] for cluster in clusters):
+            questions.add(q['question'])
+    return list(questions)
+
+def calculate_scores_for_clusters(results: dict,
+                                questions_data: List[dict],
+                                clusters: List[str],
+                                min_embedding_threshold: float = 0.15,
+                                min_coherence_threshold: float = 15.0) -> Dict[str, Dict[str, float]]:
+    """
+    Calculate average scores for questions in specified clusters.
+    Returns dict[model_name][metric] = score
+    """
+    # Get questions belonging to these clusters
+    cluster_questions = get_questions_for_clusters(questions_data, clusters)
+    
+    scores = defaultdict(lambda: {'embedding': 0, 'coherence': 0, 'answers': 0})
+    
+    for model_name, temp_data in results['models'].items():
+        model_max_scores = defaultdict(float)
+        
+        for temp, question_data in temp_data.items():
+            embedding_total = 0
+            coherence_total = 0
+            valid_answers = 0
+            
+            for question in cluster_questions:
+                if question in question_data:
+                    for answer in question_data[question]:
+                        if (answer['embedding_dissimilarity_score'] >= min_embedding_threshold and 
+                            answer['coherence_score'] >= min_coherence_threshold):
+                            embedding_total += answer['embedding_dissimilarity_score']
+                            coherence_total += answer['coherence_score'] / 100
+                            valid_answers += 1
+            
+            # Divide by number of questions to get average
+            if cluster_questions:  # Avoid division by zero
+                embedding_total /= len(cluster_questions)
+                coherence_total /= len(cluster_questions)
+                valid_answers /= len(cluster_questions)
+            
+            # Update maximum scores for this temperature
+            model_max_scores['embedding'] = max(model_max_scores['embedding'], embedding_total)
+            model_max_scores['coherence'] = max(model_max_scores['coherence'], coherence_total)
+            model_max_scores['answers'] = max(model_max_scores['answers'], valid_answers)
+        
+        # Store best scores across temperatures
+        scores[model_name] = dict(model_max_scores)
+    
+    return scores
+
+def create_cluster_comparison(results: dict,
+                            questions_data: List[dict],
+                            clusters_set1: List[str],
+                            clusters_set2: List[str],
+                            output_dir: str = 'plots') -> None:
+    """
+    Create scatter plots comparing model performance between two sets of clusters.
+    """
+    
+    # Calculate scores for both sets
+    scores_set1 = calculate_scores_for_clusters(results, questions_data, clusters_set1)
+    scores_set2 = calculate_scores_for_clusters(results, questions_data, clusters_set2)
+    
+    # Metrics to plot
+    metrics_to_plot = {
+        'embedding': 'Embedding Dissimilarity Score',
+        'coherence': 'Coherence Score',
+        'answers': 'Valid Responses'
+    }
+    
+    for metric_key, metric_name in metrics_to_plot.items():
+        # Collect data points
+        plot_data = []
+        for model in results['models'].keys():
+            if model in scores_set1 and model in scores_set2:
+                plot_data.append({
+                    'model': model,
+                    'score1': scores_set1[model][metric_key],
+                    'score2': scores_set2[model][metric_key],
+                    'company': model.split('/')[0]
+                })
+        
+        if not plot_data:
+            continue
+            
+        # Create scatter plot
+        plt.figure(figsize=(12, 8))
+        
+        # Get max values for axis limits
+        max_score = max(
+            max(d['score1'] for d in plot_data),
+            max(d['score2'] for d in plot_data)
+        )
+        
+        # Plot diagonal line
+        plt.plot([0, max_score * 1.1], [0, max_score * 1.1], 
+                 'k--', alpha=0.3, label='y=x')
+        
+        # Plot points
+        for data in plot_data:
+            plt.scatter(data['score1'], data['score2'],
+                       color=COMPANY_COLORS[data['company']],
+                       s=100, alpha=0.7)
+        
+        # Add labels with smart placement
+        texts = []
+        for data in plot_data:
+            model_name = data['model'].split('/')[-1]
+            texts.append(plt.text(data['score1'], data['score2'], 
+                                model_name, fontsize=8))
+        
+        # Adjust text positions to avoid overlap
+        adjustText.adjust_text(texts, arrowprops=dict(arrowstyle='->', color='gray', alpha=0.5))
+        
+        # Calculate correlation
+        scores1 = [d['score1'] for d in plot_data]
+        scores2 = [d['score2'] for d in plot_data]
+        correlation = np.corrcoef(scores1, scores2)[0, 1]
+        
+        # Add correlation text
+        plt.text(0.05, 0.95, f'Correlation: {correlation:.3f}',
+                transform=plt.gca().transAxes,
+                verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Set equal aspect ratio and limits
+        plt.axis('equal')
+        plt.xlim(0, max_score * 1.1)
+        plt.ylim(0, max_score * 1.1)
+        
+        # Create cluster set descriptions
+        set1_desc = ', '.join(clusters_set1)
+        set2_desc = ', '.join(clusters_set2)
+        
+        # Labels and title
+        plt.xlabel(f'Average {metric_name} on\n{set1_desc}')
+        plt.ylabel(f'Average {metric_name} on\n{set2_desc}')
+        plt.title(f'Model Performance Comparison:\n{metric_name}')
+        
+        # Add legend for companies
+        legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
+                                    markerfacecolor=color, label=company, markersize=10)
+                         for company, color in COMPANY_COLORS.items()]
+        plt.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 0.5))
+        
+        # Add grid
+        plt.grid(True, alpha=0.3)
+        
+        # Save plot
+        plt.tight_layout()
+        plt.savefig(Path(output_dir) / f'cluster_comparison_{metric_key}.png', 
+                    dpi=300, bbox_inches='tight')
+        plt.close()
+
+def analyze_cluster_sets(results_file: str,
+                    questions_data: List[dict],
+                    clusters_set1: List[str],
+                    clusters_set2: List[str],
+                    output_dir: str = 'plots') -> None:
+    """Main function to analyze performance between cluster sets. Input lists of cluster names."""
+    
+    # Load results
+    with open(results_file, 'r') as f:
+        results = json.load(f)
+    
+    # Create output directory
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    # Generate comparison plots
+    create_cluster_comparison(results, questions_data, clusters_set1, clusters_set2, output_dir)
+
+
+#####
+
+
+def create_parameter_plots(results: dict,
+                         model_scales: List[dict],
+                         output_dir: str = 'plots') -> None:
+    """
+    Create scatter plots comparing model performance versus parameter count.
+    """
+    
+    # Get maximum scores for each model
+    max_scores = get_max_scores(results)
+    
+    # Convert model scales to dict for easier lookup
+    scale_dict = {item['model']: item['parameters'] for item in model_scales}
+    
+    # Metrics to plot
+    metrics_to_plot = {
+        'embedding': 'Embedding Dissimilarity Score',
+        'coherence': 'Coherence Score',
+        'answers': 'Valid Responses'
+    }
+    
+    for metric_key, metric_name in metrics_to_plot.items():
+        # Collect data points
+        plot_data = []
+        for model, scores in max_scores.items():
+            if model in scale_dict:
+                plot_data.append({
+                    'model': model,
+                    'score': scores[metric_key],
+                    'parameters': scale_dict[model],
+                    'company': model.split('/')[0]
+                })
+        
+        if not plot_data:
+            continue
+            
+        # Create scatter plot with extra space for labels
+        plt.figure(figsize=(12, 8))
+        
+        # Set logarithmic scale for x-axis early
+        plt.xscale('log')
+        
+        # Plot points
+        for data in plot_data:
+            plt.scatter(data['parameters'], data['score'],
+                       color=COMPANY_COLORS[data['company']],
+                       s=100, alpha=0.7)
+        
+        # Add trend line before labels
+        params = [d['parameters'] for d in plot_data]
+        scores = [d['score'] for d in plot_data]
+        log_params = np.log10(params)
+        
+        # Calculate correlation with log parameters
+        correlation = np.corrcoef(log_params, scores)[0, 1]
+        
+        # Fit line in log space
+        z = np.polyfit(log_params, scores, 1)
+        p = np.poly1d(z)
+        
+        # Plot trend line
+        x_range = np.logspace(np.min(log_params), np.max(log_params), 100)
+        plt.plot(x_range, p(np.log10(x_range)), 
+                "k--", alpha=0.5, label='Trend line')
+        
+        # Add labels
+        texts = []
+        for data in plot_data:
+            model_name = data['model'].split('/')[-1]
+            texts.append(plt.text(data['parameters'], data['score'], 
+                                model_name, fontsize=8))
+        
+        # Adjust text positions with transformed coordinates
+        adjustText.adjust_text(texts, 
+                             arrowprops=dict(arrowstyle='->', color='gray', alpha=0.5),
+                             force_points=(0.1, 0.1),
+                             expand_points=(1.5, 1.5))
+        
+        # Add correlation text
+        plt.text(0.05, 0.95, f'Log-Scale Correlation: {correlation:.3f}',
+                transform=plt.gca().transAxes,
+                verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Customize plot
+        plt.xlabel('Number of Parameters (log scale)')
+        plt.ylabel(f'AidanBench {metric_name}')
+        plt.title(f'Model Size vs {metric_name}')
+        
+        # Format x-axis tick labels
+        ax = plt.gca()
+        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{int(x):,}'))
+        
+        # Add legend for companies
+        legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
+                                    markerfacecolor=color, label=company, markersize=10)
+                         for company, color in COMPANY_COLORS.items()]
+        legend_elements.append(plt.Line2D([0], [0], linestyle='--', color='k', alpha=0.5,
+                                        label='Trend line'))
+        plt.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 0.5))
+        
+        # Add grid that respects log scale
+        plt.grid(True, alpha=0.3, which='both')
+        
+        # Save plot
+        plt.tight_layout()
+        plt.savefig(Path(output_dir) / f'parameter_comparison_{metric_key}.png', 
+                    dpi=300, bbox_inches='tight')
+        plt.close()
+
+
+
+def analyze_parameter_scaling(results_file: str,
+                            model_scales: List[dict],
+                            output_dir: str = 'plots') -> None:
+    """Main function to analyze performance versus model size."""
+    
+    # Load results
+    with open(results_file, 'r') as f:
+        results = json.load(f)
+    
+    # Create output directory
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    # Generate comparison plots
+    create_parameter_plots(results, model_scales, output_dir)
+
+if __name__ == "__main__":
+    analyze_parameter_scaling(
+        'results.json',
+        model_scales,
+        output_dir='plots'
+    )
