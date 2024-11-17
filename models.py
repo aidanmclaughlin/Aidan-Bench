@@ -3,6 +3,7 @@ import os
 from functools import lru_cache
 from retry import retry
 
+
 @retry(backoff=2)
 def chat_with_model(prompt: str, model: str, max_tokens: int = 4000, temperature: float = 0) -> str:
     client = OpenAI(

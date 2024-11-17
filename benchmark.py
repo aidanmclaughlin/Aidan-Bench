@@ -12,7 +12,8 @@ def benchmark_question(
     temperature: float,
     previous_answers: list,
     chain_of_thought: bool = False,
-    use_llm: bool = False
+    use_llm: bool = False,
+    thresholds: dict = None
 ):
     start_time = time.time()
     answer_num = len(previous_answers) + 1
@@ -68,7 +69,9 @@ def benchmark_question(
 
             answer_num += 1
 
-            if coherence_score <= 15 or embedding_novelty_score < 0.15:
+            if (coherence_score <= thresholds['coherence_score'] or 
+                embedding_novelty_score < thresholds['embedding_dissimilarity_score'] or
+                (use_llm and llm_novelty_score < thresholds['llm_dissimilarity_score'])):
                 print(f"Breaking after {answer_num} answers.")
                 break
 

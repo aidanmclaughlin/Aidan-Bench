@@ -1,20 +1,13 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from model_list import models, model_subset
 from benchmark import benchmark_question
 from colorama import Fore, Style
 from itertools import product
 from question_list import questions
-import argparse
+from get_args import get_user_choices
 import json
 import sys
 import time
 import os
-
-SKIP_THRESHOLDS = {
-    'coherence_score': 15,
-    'embedding_dissimilarity_score': 0.15,
-    'llm_dissimilarity_score': 0.15
-}
 
 
 def run_benchmark(
@@ -24,11 +17,17 @@ def run_benchmark(
     use_llm: bool = False,
     multithreaded: bool = True,
     num_questions: int | None = None,
-    results_file: str = 'results.json'
+    results_file: str = 'results.json',
+    thresholds: dict = None
 ) -> None:
     questions_to_use = questions[:num_questions] if num_questions else questions
 
-    with open(results_file, 'r+') as f:
+    # Create results file if it doesn't exist
+    if not os.path.exists(results_file):
+        with open(results_file, 'w') as f:
+            json.dump({}, f)
+
+    with open(results_file, 'r') as f:
         results = json.load(f)
 
     start_time = time.time()
@@ -42,7 +41,8 @@ def run_benchmark(
             use_llm,
             results,
             multithreaded,
-            results_file
+            results_file,
+            thresholds
         )
     except KeyboardInterrupt:
         print(
@@ -52,7 +52,18 @@ def run_benchmark(
         print(f"Total processing time: {time.time() - start_time:.2f} seconds")
 
 
-def _run_benchmarks(questions, models, temperatures, chain_of_thought, use_llm, results, multithreaded, results_file):
+def _validate_environment() -> None:
+    if not os.getenv("OPENAI_API_KEY"):
+        print(
+            f"{Fore.RED}Error: Missing required environment variable: OPENAI_API_KEY{Style.RESET_ALL}")
+        sys.exit(1)
+    if not os.getenv("OPEN_ROUTER_KEY"):
+        print(
+            f"{Fore.RED}Error: Missing required environment variable: OPEN_ROUTER_KEY{Style.RESET_ALL}")
+        sys.exit(1)
+
+
+def _run_benchmarks(questions, models, temperatures, chain_of_thought, use_llm, results, multithreaded, results_file, thresholds):
     benchmark_params = list(product(questions, models, temperatures))
 
     # Group parameters by model for tracking completion
@@ -62,13 +73,13 @@ def _run_benchmarks(questions, models, temperatures, chain_of_thought, use_llm, 
 
     if multithreaded:
         _run_multithreaded(model_params, chain_of_thought,
-                           use_llm, results, results_file)
+                           use_llm, results, results_file, thresholds)
     else:
         _run_sequential(model_params, chain_of_thought,
-                        use_llm, results, results_file)
+                        use_llm, results, results_file, thresholds)
 
 
-def _run_multithreaded(model_params, chain_of_thought, use_llm, results, results_file):
+def _run_multithreaded(model_params, chain_of_thought, use_llm, results, results_file, thresholds):
     with ThreadPoolExecutor(max_workers=100) as executor:
         all_futures = []
         active_models = []
@@ -76,7 +87,7 @@ def _run_multithreaded(model_params, chain_of_thought, use_llm, results, results
         # Submit all tasks first
         for model, model_tasks in model_params.items():
             # Check if all questions for this model can be skipped
-            if all(_can_skip_question(results, question, model, temp, use_llm)
+            if all(_can_skip_question(results, question, model, temp, use_llm, thresholds)
                    for question, model, temp in model_tasks):
                 print(
                     f"Skipping all questions for {model} - already completed")
@@ -85,7 +96,7 @@ def _run_multithreaded(model_params, chain_of_thought, use_llm, results, results
             active_models.append(model)
             model_futures = [
                 executor.submit(_process_question, question, model, temp,
-                                chain_of_thought, use_llm, results)
+                                chain_of_thought, use_llm, results, thresholds)
                 for question, model, temp in model_tasks
             ]
             all_futures.extend(model_futures)
@@ -115,12 +126,12 @@ def _run_multithreaded(model_params, chain_of_thought, use_llm, results, results
                 _save_results(results, results_file)
 
 
-def _run_sequential(model_params, chain_of_thought, use_llm, results, results_file):
+def _run_sequential(model_params, chain_of_thought, use_llm, results, results_file, thresholds):
     for model_tasks in model_params.values():
         for question, model, temp in model_tasks:
             try:
                 _process_question(question, model, temp,
-                                  chain_of_thought, use_llm, results)
+                                  chain_of_thought, use_llm, results, thresholds)
             except Exception as e:
                 print(
                     f"{Fore.RED}Error for {model} (temp={temp}): {e}{Style.RESET_ALL}")
@@ -128,7 +139,7 @@ def _run_sequential(model_params, chain_of_thought, use_llm, results, results_fi
         _save_results(results, results_file)
 
 
-def _process_question(question, model_name, temperature, chain_of_thought, use_llm, results):
+def _process_question(question, model_name, temperature, chain_of_thought, use_llm, results, thresholds):
     # Get the model's results dict, creating nested structure if needed
     model_results = results.setdefault('models', {}).setdefault(
         model_name, {}).setdefault(str(temperature), {})
@@ -136,7 +147,7 @@ def _process_question(question, model_name, temperature, chain_of_thought, use_l
     # Skip if question is already completed successfully
     if question in model_results:
         previous_answers = model_results[question]
-        if _should_skip_question(previous_answers, use_llm):
+        if _should_skip_question(previous_answers, use_llm, thresholds):
             return
 
     # Get previous answers if they exist, otherwise empty list
@@ -148,14 +159,15 @@ def _process_question(question, model_name, temperature, chain_of_thought, use_l
         temperature,
         [a['answer'] for a in previous_answers],
         chain_of_thought,
-        use_llm
+        use_llm,
+        thresholds
     )
 
     # Store results
     model_results[question] = previous_answers + new_answers
 
 
-def _should_skip_question(previous_answers: list[dict], use_llm: bool) -> bool:
+def _should_skip_question(previous_answers: list[dict], use_llm: bool, thresholds: dict) -> bool:
     if not previous_answers:
         return False
 
@@ -163,15 +175,15 @@ def _should_skip_question(previous_answers: list[dict], use_llm: bool) -> bool:
 
     checks = [
         last_answer.get('coherence_score',
-                        100) <= SKIP_THRESHOLDS['coherence_score'],
+                        100) <= thresholds['coherence_score'],
         last_answer.get('embedding_dissimilarity_score',
-                        1.0) <= SKIP_THRESHOLDS['embedding_dissimilarity_score']
+                        1.0) <= thresholds['embedding_dissimilarity_score']
     ]
 
     if use_llm:
         checks.append(
             last_answer.get('llm_dissimilarity_score',
-                            1.0) <= SKIP_THRESHOLDS['llm_dissimilarity_score']
+                            1.0) <= thresholds['llm_dissimilarity_score']
         )
 
     return any(checks)
@@ -182,77 +194,21 @@ def _save_results(results: dict, results_file: str) -> None:
         json.dump(results, f, indent=2)
 
 
-def _validate_environment():
-    missing_vars = []
-
-    if not os.getenv("OPEN_ROUTER_KEY"):
-        missing_vars.append("OPEN_ROUTER_KEY")
-    if not os.getenv("AZURE_API_KEY"):
-        missing_vars.append("AZURE_API_KEY")
-
-    if missing_vars:
-        print(f"{Fore.RED}Error: Missing required environment variables: {', '.join(missing_vars)}{Style.RESET_ALL}")
-        sys.exit(1)
-
-
-def _parse_args():
-    parser = argparse.ArgumentParser(description="Benchmark language models")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--model-name", type=str,
-                       help="Single model to benchmark")
-    group.add_argument("--all-models", action="store_true",
-                       help="Benchmark all models")
-    group.add_argument("--model-subset", action="store_true",
-                       help="Benchmark model subset")
-
-    parser.add_argument("--temp-range", action="store_true",
-                        help="Use temperature range 0-1")
-    parser.add_argument("--single-threaded",
-                        action="store_true", help="Disable multithreading")
-    parser.add_argument("--temperature", type=float, default=0.7)
-    parser.add_argument("--chain-of-thought", action="store_true")
-    parser.add_argument("--use-llm-similarity", action="store_true")
-    parser.add_argument("--num-questions", type=int)
-    parser.add_argument("--results-file", default='results.json')
-
-    return parser.parse_args()
-
-
-def _get_temperature_range(args):
-    return [round(t * 0.2, 1) for t in range(6)] if args.temp_range else [args.temperature]
-
-
-def _get_model_names(args):
-    if args.all_models:
-        return models
-    if args.model_subset:
-        return model_subset
-    return [args.model_name]
-
-
-def _can_skip_question(results: dict, question: str, model_name: str, temperature: float, use_llm: bool) -> bool:
+def _can_skip_question(results: dict, question: str, model_name: str, temperature: float, use_llm: bool, thresholds: dict) -> bool:
     """Check if a question can be skipped before creating a thread for it"""
     model_results = (results.get('models', {})
                      .get(model_name, {})
                      .get(str(temperature), {}))
 
     previous_answers = model_results.get(question, [])
-    return _should_skip_question(previous_answers, use_llm) if previous_answers else False
+    return _should_skip_question(previous_answers, use_llm, thresholds) if previous_answers else False
 
 
 if __name__ == "__main__":
     try:
         _validate_environment()
-        args = _parse_args()
-        run_benchmark(
-            model_names=_get_model_names(args),
-            temperatures=_get_temperature_range(args),
-            chain_of_thought=args.chain_of_thought,
-            use_llm=args.use_llm_similarity,
-            multithreaded=not args.single_threaded,
-            num_questions=args.num_questions,
-            results_file=args.results_file
-        )
+        choices = get_user_choices()
+        run_benchmark(**choices)
     except KeyboardInterrupt:
         print(f"\n{Fore.YELLOW}Benchmark interrupted. Exiting...{Style.RESET_ALL}")
         sys.exit(0)
