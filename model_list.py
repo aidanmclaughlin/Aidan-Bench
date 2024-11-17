@@ -67,14 +67,13 @@ model_prices = [
     {'model': 'mistralai/mistral-7b-instruct-v0.3', 'input_price': 0.055, 'output_price': 0.055},
 ]
 
-<<<<<<< HEAD
 lmsys_scores = [
         {'model': 'openai/gpt-4o-2024-08-06', 'lmsys_score': 1265},
         {'model': 'openai/gpt-4o-2024-05-13', 'lmsys_score': 1285},
         {'model': 'openai/gpt-4o-mini-2024-07-18', 'lmsys_score': 1272},
-        # {'model': 'openai/gpt-4-0314', 'lmsys_score': 0.5},
-        # {'model': 'openai/gpt-4-1106-preview', 'lmsys_score': 0.5},
-        # {'model': 'openai/gpt-4-turbo', 'lmsys_score': 0.5},
+        {'model': 'openai/gpt-4-0314', 'lmsys_score': 1186}, # deprecated
+        {'model': 'openai/gpt-4-1106-preview', 'lmsys_score': 1250}, # deprecated
+        {'model': 'openai/gpt-4-turbo', 'lmsys_score': 1256}, # deprecated
         {'model': 'openai/o1-mini', 'lmsys_score': 1308},
         {'model': 'openai/o1-preview', 'lmsys_score': 1333},
         {'model': 'meta-llama/llama-3.1-8b-instruct', 'lmsys_score': 1175},
@@ -159,12 +158,4 @@ model_subset = [
     "google/gemini-flash-1.5-8b",
     "anthropic/claude-3.5-sonnet",  # New Sonnet
     "gpt-4-turbo"
-=======
-model_subset = [
-    "gpt-4-turbo",
-    "gpt-4o-2024-08-06",
-    "gpt-4o-mini",
-    "o1-mini",      
-    "o1-preview"
->>>>>>> 88b4643 (add prices)
 ]
