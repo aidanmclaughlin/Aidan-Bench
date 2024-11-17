@@ -16,6 +16,9 @@ import adjustText
 from datetime import datetime
 import matplotlib.dates as mdates
 
+import csv
+import pandas as pd
+
 
 # Define company colors
 COMPANY_COLORS = {
@@ -1095,9 +1098,17 @@ def calculate_scores_for_questions(results: dict,
 def create_question_set_comparison(results: dict,
                                  questions_set1: List[str],
                                  questions_set2: List[str],
-                                 output_dir: str = 'plots') -> None:
+                                 output_dir: str = 'plots',
+                                 normalize_scales: bool = False) -> None:
     """
     Create scatter plots comparing model performance between two sets of questions.
+    
+    Args:
+        results: Results dictionary
+        questions_set1: First set of questions
+        questions_set2: Second set of questions
+        output_dir: Directory to save plots
+        normalize_scales: If True, rescale axes to make best-fit line appear as y=x
     """    
     # Calculate scores for both sets
     scores_set1 = calculate_scores_for_questions(results, questions_set1)
@@ -1128,19 +1139,38 @@ def create_question_set_comparison(results: dict,
         # Create scatter plot
         plt.figure(figsize=(12, 8))
         
-        # Get max values for axis limits
-        max_score = max(
-            max(d['score1'] for d in plot_data),
-            max(d['score2'] for d in plot_data)
-        )
+        # Get scores for calculations
+        scores1 = np.array([d['score1'] for d in plot_data])
+        scores2 = np.array([d['score2'] for d in plot_data])
+        
+        if normalize_scales:
+            # Calculate scaling factors to make best-fit line appear as y=x
+            # Use linear regression to find the relationship
+            z = np.polyfit(scores1, scores2, 1)
+            slope, intercept = z
+            
+            # Scale scores2 to match scores1's scale
+            scores2_scaled = (scores2 - intercept) / slope
+            
+            # Update plot data with scaled scores
+            for data, scaled_score2 in zip(plot_data, scores2_scaled):
+                data['score2_scaled'] = scaled_score2
+            
+            # Use scaled scores for plotting
+            max_score = max(max(scores1), max(scores2_scaled))
+            plot_scores2 = scores2_scaled
+        else:
+            max_score = max(max(scores1), max(scores2))
+            plot_scores2 = scores2
         
         # Plot diagonal line
         plt.plot([0, max_score * 1.1], [0, max_score * 1.1], 
                  'k--', alpha=0.3, label='y=x')
         
         # Plot points
-        for data in plot_data:
-            plt.scatter(data['score1'], data['score2'],
+        for idx, data in enumerate(plot_data):
+            plt.scatter(data['score1'], 
+                       data['score2_scaled'] if normalize_scales else data['score2'],
                        color=COMPANY_COLORS[data['company']],
                        s=100, alpha=0.7)
         
@@ -1148,15 +1178,14 @@ def create_question_set_comparison(results: dict,
         texts = []
         for data in plot_data:
             model_name = data['model'].split('/')[-1]
-            texts.append(plt.text(data['score1'], data['score2'], 
+            texts.append(plt.text(data['score1'], 
+                                data['score2_scaled'] if normalize_scales else data['score2'], 
                                 model_name, fontsize=8))
         
         # Adjust text positions to avoid overlap
         adjustText.adjust_text(texts, arrowprops=dict(arrowstyle='->', color='gray', alpha=0.5))
         
         # Calculate correlation
-        scores1 = [d['score1'] for d in plot_data]
-        scores2 = [d['score2'] for d in plot_data]
         correlation = np.corrcoef(scores1, scores2)[0, 1]
         
         # Add correlation text
@@ -1171,9 +1200,15 @@ def create_question_set_comparison(results: dict,
         plt.ylim(0, max_score * 1.1)
         
         # Labels and title
-        plt.xlabel(f'Average {metric_name} on Wordcel')
-        plt.ylabel(f'Average {metric_name} on Shape Rotator')
+        plt.xlabel(f'Average {metric_name} on wordcel questions')
+        plt.ylabel(f'Average {metric_name} on shape rotator questions')
         plt.title(f'Model Performance Comparison:\n{metric_name}')
+        
+        # if normalize_scales:
+        #     plt.text(0.05, 0.89, f'Scale factor: {slope:.3f}x + {intercept:.3f}',
+        #             transform=plt.gca().transAxes,
+        #             verticalalignment='top',
+        #             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
         
         # Add legend for companies
         legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
@@ -1186,14 +1221,16 @@ def create_question_set_comparison(results: dict,
         
         # Save plot
         plt.tight_layout()
-        plt.savefig(Path(output_dir) / f'question_set_comparison_{metric_key}.png', 
+        suffix = '_normalized' if normalize_scales else ''
+        plt.savefig(Path(output_dir) / f'question_set_comparison_{metric_key}{suffix}.png', 
                     dpi=300, bbox_inches='tight')
         plt.close()
 
 def analyze_question_sets(results_file: str,
                          questions_set1: List[str],
                          questions_set2: List[str],
-                         output_dir: str = 'plots') -> None:
+                         output_dir: str = 'plots',
+                         normalize_scales: bool = False) -> None:
     """Main function to analyze performance between question sets."""
     
     # Load results
@@ -1204,8 +1241,7 @@ def analyze_question_sets(results_file: str,
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     
     # Generate comparison plots
-    create_question_set_comparison(results, questions_set1, questions_set2, output_dir)
-
+    create_question_set_comparison(results, questions_set1, questions_set2, output_dir, normalize_scales)
 
 
 #####
@@ -1517,9 +1553,124 @@ def analyze_parameter_scaling(results_file: str,
     # Generate comparison plots
     create_parameter_plots(results, model_scales, output_dir)
 
-if __name__ == "__main__":
-    analyze_parameter_scaling(
-        'results.json',
-        model_scales,
-        output_dir='plots'
-    )
+
+
+#####
+
+def create_comprehensive_table(results: dict,
+                             output_dir: str = 'tables',
+                             min_embedding_threshold: float = 0.15,
+                             min_coherence_threshold: float = 15.0) -> None:
+    """
+    Create CSV tables showing all scores for each question and model.
+    Creates three tables: one each for embedding, coherence, and valid answers.
+    """
+    # Create output directory
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    # Get all models and questions
+    models = sorted(results['models'].keys())
+    questions = set()
+    for model_data in results['models'].values():
+        for temp_data in model_data.values():
+            questions.update(temp_data.keys())
+    questions = sorted(questions)
+    
+    # Initialize score storage
+    scores = {
+        'embedding': defaultdict(lambda: defaultdict(float)),
+        'coherence': defaultdict(lambda: defaultdict(float)),
+        'answers': defaultdict(lambda: defaultdict(int))
+    }
+    
+    # Calculate scores for each model-question pair
+    for model in models:
+        model_data = results['models'][model]
+        for temp, questions_data in model_data.items():
+            for question, answers in questions_data.items():
+                embedding_total = 0
+                coherence_total = 0
+                valid_answers = 0
+                
+                for answer in answers:
+                    if (answer['embedding_dissimilarity_score'] >= min_embedding_threshold and 
+                        answer['coherence_score'] >= min_coherence_threshold):
+                        embedding_total += answer['embedding_dissimilarity_score']
+                        coherence_total += answer['coherence_score'] / 100  # Divide by 100 as requested
+                        valid_answers += 1
+                
+                # Update maximum scores for this model-question pair
+                scores['embedding'][question][model] = max(
+                    scores['embedding'][question][model],
+                    embedding_total
+                )
+                scores['coherence'][question][model] = max(
+                    scores['coherence'][question][model],
+                    coherence_total
+                )
+                scores['answers'][question][model] = max(
+                    scores['answers'][question][model],
+                    valid_answers
+                )
+    
+    # Create CSV files
+    for metric in ['embedding', 'coherence', 'answers']:
+        filename = Path(output_dir) / f'question_scores_{metric}.csv'
+        
+        with open(filename, 'w', newline='') as f:
+            writer = csv.writer(f)
+            
+            # Write header
+            header = ['Question'] + [model.split('/')[-1] for model in models]
+            writer.writerow(header)
+            
+            # Write data
+            for question in questions:
+                row = [question]
+                for model in models:
+                    score = scores[metric][question][model]
+                    if metric in ['embedding', 'coherence']:
+                        row.append(f'{score:.3f}')
+                    else:
+                        row.append(str(score))
+                writer.writerow(row)
+    
+    # Also create a combined Excel file with all metrics
+    # try:
+    if True:
+        # import pandas as pd
+        
+        # Create DataFrames for each metric
+        dfs = {}
+        for metric in ['embedding', 'coherence', 'answers']:
+            data = []
+            for question in questions:
+                row = {'Question': question}
+                for model in models:
+                    score = scores[metric][question][model]
+                    if metric in ['embedding', 'coherence']:
+                        row[model.split('/')[-1]] = f'{score:.3f}'
+                    else:
+                        row[model.split('/')[-1]] = str(score)
+                data.append(row)
+            dfs[metric] = pd.DataFrame(data)
+        
+        # Save to Excel with multiple sheets
+        with pd.ExcelWriter(Path(output_dir) / 'question_scores_all.xlsx') as writer:
+            for metric, df in dfs.items():
+                df.to_excel(writer, sheet_name=metric, index=False)
+                
+    # except ImportError:
+    #     print("pandas not installed - skipping Excel file creation")
+
+def generate_score_tables(results_file: str,
+                         output_dir: str = 'tables') -> None:
+    """Main function to generate score tables."""
+    
+    # Load results
+    with open(results_file, 'r') as f:
+        results = json.load(f)
+    
+    # Generate tables
+    create_comprehensive_table(results, output_dir)
+
