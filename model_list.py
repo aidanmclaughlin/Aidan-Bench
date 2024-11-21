@@ -1,6 +1,7 @@
 models = [
     "openai/gpt-4o-2024-08-06",
     "openai/gpt-4o-2024-05-13",
+    "openai/gpt-4o-2024-11-20",
     "openai/gpt-4o-mini-2024-07-18",
     "openai/gpt-4-0314",
     "openai/gpt-4-1106-preview",
