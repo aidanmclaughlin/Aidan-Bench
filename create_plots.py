@@ -617,7 +617,7 @@ def plot_question_performance(best_scores: Dict[str, Dict[int, Tuple[str, float]
     for q in questions_data:
         for cluster in q['clusters']:
             cluster_questions[cluster].append(q['number'])
-    
+
     # Sort and organize data
     organized_data = []
     y_labels = []
@@ -1674,3 +1674,156 @@ def generate_score_tables(results_file: str,
     # Generate tables
     create_comprehensive_table(results, output_dir)
 
+
+
+#####
+
+
+import json
+import pandas as pd
+import numpy as np
+from pathlib import Path
+from typing import Dict, List, Tuple
+from collections import defaultdict
+
+def calculate_model_scores_with_threshold(results: dict,
+                                        embedding_threshold: float,
+                                        coherence_threshold: float) -> Dict[str, Dict[str, float]]:
+    """
+    Calculate total scores for each model with given thresholds.
+    Stop counting at first answer below threshold.
+    """
+    model_scores = defaultdict(lambda: {'embedding': 0, 'coherence': 0, 'answers': 0})
+    
+    for model_name, temp_data in results['models'].items():
+        # Track best scores across temperatures
+        best_scores = defaultdict(float)
+        
+        for temp, questions in temp_data.items():
+            temp_embedding = 0
+            temp_coherence = 0
+            temp_answers = 0
+            
+            for question, answers in questions.items():
+                # Only look at answers until we hit one below threshold
+                for answer in answers:
+                    if (answer['embedding_dissimilarity_score'] >= embedding_threshold and 
+                        answer['coherence_score'] >= coherence_threshold):
+                        temp_embedding += answer['embedding_dissimilarity_score']
+                        temp_coherence += answer['coherence_score'] / 100
+                        temp_answers += 1
+                    else:
+                        break  # Stop at first answer below threshold
+            
+            # Update best scores for this model
+            best_scores['embedding'] = max(best_scores['embedding'], temp_embedding)
+            best_scores['coherence'] = max(best_scores['coherence'], temp_coherence)
+            best_scores['answers'] = max(best_scores['answers'], temp_answers)
+        
+        model_scores[model_name] = dict(best_scores)
+    
+    return model_scores
+
+def create_threshold_tables(results: dict, output_dir: str = 'tables') -> None:
+    """Create tables showing score and ranking evolution with different thresholds."""
+    
+    # Generate threshold values
+    embedding_thresholds = np.arange(0.15, 1.0, 0.1)
+    coherence_thresholds = np.arange(15, 100, 10)
+    
+    # Store scores and rankings for each threshold
+    scores_data = []
+    rankings_data = []
+    
+    for emb_thresh, coh_thresh in zip(embedding_thresholds, coherence_thresholds):
+        # Calculate scores for this threshold
+        scores = calculate_model_scores_with_threshold(results, emb_thresh, coh_thresh)
+        
+        # Prepare score data
+        for model, metrics in scores.items():
+            scores_data.append({
+                'Embedding Threshold': f'{emb_thresh:.2f}',
+                'Coherence Threshold': f'{coh_thresh:.0f}',
+                'Model': model.split('/')[-1],
+                'Company': model.split('/')[0],
+                'Embedding Score': metrics['embedding'],
+                'Coherence Score': metrics['coherence'],
+                'Valid Answers': metrics['answers']
+            })
+        
+        # Calculate rankings
+        models = list(scores.keys())
+        for metric in ['embedding', 'coherence', 'answers']:
+            sorted_models = sorted(models, 
+                                 key=lambda m: scores[m][metric],
+                                 reverse=True)
+            for rank, model in enumerate(sorted_models, 1):
+                rankings_data.append({
+                    'Embedding Threshold': f'{emb_thresh:.2f}',
+                    'Coherence Threshold': f'{coh_thresh:.0f}',
+                    'Model': model.split('/')[-1],
+                    'Company': model.split('/')[0],
+                    'Metric': metric,
+                    'Rank': rank
+                })
+    
+    # Create DataFrames
+    scores_df = pd.DataFrame(scores_data)
+    rankings_df = pd.DataFrame(rankings_data)
+    
+    # Create threshold labels
+    threshold_labels = [f'E:{e:.2f}/C:{c:.0f}' 
+                       for e, c in zip(embedding_thresholds, coherence_thresholds)]
+    
+    # Create more readable pivot tables
+    # Scores tables (one for each metric)
+    scores_tables = {}
+    for metric in ['Embedding Score', 'Coherence Score', 'Valid Answers']:
+        pivot = pd.pivot_table(
+            scores_df,
+            index=['Company', 'Model'],
+            columns=['Embedding Threshold', 'Coherence Threshold'],
+            values=metric,
+            aggfunc='first'
+        ).round(3)
+        
+        # Flatten column index and rename with more readable labels
+        pivot.columns = threshold_labels
+        scores_tables[metric] = pivot
+    
+    # Rankings table
+    rankings_pivot = pd.pivot_table(
+        rankings_df,
+        index=['Company', 'Model', 'Metric'],
+        columns=['Embedding Threshold', 'Coherence Threshold'],
+        values='Rank',
+        aggfunc='first'
+    )
+    rankings_pivot.columns = threshold_labels
+    
+    # Save to Excel
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    with pd.ExcelWriter(Path(output_dir) / 'threshold_analysis.xlsx') as writer:
+        for metric, table in scores_tables.items():
+            sheet_name = metric.replace(' ', '_')[:31]  # Excel sheet name length limit
+            table.to_excel(writer, sheet_name=sheet_name)
+        rankings_pivot.to_excel(writer, sheet_name='Rankings')
+    
+    # Save CSVs
+    for metric, table in scores_tables.items():
+        filename = f'threshold_scores_{metric.lower().replace(" ", "_")}.csv'
+        table.to_csv(Path(output_dir) / filename)
+    rankings_pivot.to_csv(Path(output_dir) / 'threshold_rankings.csv')
+
+def analyze_thresholds(results_file: str, output_dir: str = 'tables') -> None:
+    """Main function to analyze threshold sensitivity."""
+    
+    # Load results
+    with open(results_file, 'r') as f:
+        results = json.load(f)
+    
+    # Generate tables
+    create_threshold_tables(results, output_dir)
+
+if __name__ == "__main__":
+    analyze_thresholds('results.json', output_dir='tables')

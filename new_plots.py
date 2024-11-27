@@ -1,3 +1,4 @@
+# %%
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -981,7 +982,7 @@ def create_parameter_plots(results: dict,
                          output_dir: str = 'plots') -> None:
     """Create scatter plots comparing performance versus parameter count for Llama models."""
     max_scores = get_max_scores(results)
-    scale_dict = {item['model']: item['parameters'] for item in model_scales}
+    scale_dict = {item['model']: item['parameters'] for item in model_scales if item['model'].startswith("meta")}
     
     fig, ax = plt.subplots(figsize=(15, 8))
     
@@ -1011,7 +1012,7 @@ def create_parameter_plots(results: dict,
     
     # Set scales before adding labels
     ax.set_xscale('log')
-    ax.set_yscale('log')
+    # ax.set_yscale('log')
     
     # Add labels with adjusted positions
     texts = []
@@ -1028,17 +1029,17 @@ def create_parameter_plots(results: dict,
     
     # Calculate correlation with log values
     log_params = np.log10([d['parameters'] for d in plot_data])
-    log_answers = np.log10([d['answers'] for d in plot_data])
-    correlation = np.corrcoef(log_params, log_answers)[0, 1]
+    not_log_answers = [d['answers'] for d in plot_data]
+    correlation = np.corrcoef(log_params, not_log_answers)[0, 1]
     
     # Add correlation text
-    plt.text(0.05, 0.95, f'Log-Scale Correlation: {correlation:.3f}',
+    plt.text(0.05, 0.95, f'Correlation: {correlation:.3f}',
             transform=plt.gca().transAxes,
             verticalalignment='top',
             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
     
     plt.xlabel('Number of Parameters (log scale)')
-    plt.ylabel('Number of Valid Answers (log scale)')
+    plt.ylabel('Number of Valid Answers')
     plt.title('Llama Family Performance by Model Size')
     
     # Format x-axis tick labels
@@ -1333,8 +1334,8 @@ def plot_lmsys_correlation(results: dict,
                   zorder=10)
     
     # Set scales before adding labels
-    ax.set_xscale('log')
-    ax.set_yscale('log')
+    # ax.set_xscale('log')
+    # ax.set_yscale('log')
     
     # Add labels with adjusted positions
     texts = []
@@ -1350,9 +1351,9 @@ def plot_lmsys_correlation(results: dict,
     _adjust_labels(texts, ax)
     
     # Calculate correlation with log values
-    log_lmsys = np.log10([d['lmsys_score'] for d in plot_data])
-    log_answers = np.log10([d['answers'] for d in plot_data])
-    correlation = np.corrcoef(log_lmsys, log_answers)[0, 1]
+    not_log_lmsys = [d['lmsys_score'] for d in plot_data]
+    not_log_answers = [d['answers'] for d in plot_data]
+    correlation = np.corrcoef(not_log_lmsys, not_log_answers)[0, 1]
     
     # Add correlation text in same style as other plots
     plt.text(0.05, 0.95, f'Log-Scale Correlation: {correlation:.3f}',
@@ -1360,8 +1361,8 @@ def plot_lmsys_correlation(results: dict,
             verticalalignment='top',
             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
     
-    plt.xlabel('LMSYS Score (log scale)')
-    plt.ylabel('Number of Valid Answers (log scale)')
+    plt.xlabel('LMSYS Score')
+    plt.ylabel('Number of Valid Answers')
     plt.title('LMSYS Score vs Performance')
     
     # Add legend for companies in same style as other plots

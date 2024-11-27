@@ -75,7 +75,7 @@ def create_visualization(results_path='results.json'):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Model Response Analysis</title>
+    <title>AidanBench Visualization Tool</title>
 
     <!-- Load dependencies -->
     <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
@@ -425,7 +425,7 @@ def create_visualization(results_path='results.json'):
 
             return (
                 <div className="container mx-auto p-4 max-w-6xl">
-                    <h1 className="text-2xl font-bold mb-4">Model Response Analysis</h1>
+                    <h1 className="text-2xl font-bold mb-4">AidanBench Visualizer</h1>
                     
                     <QuestionFilter
                         questions={initialData.questions}
