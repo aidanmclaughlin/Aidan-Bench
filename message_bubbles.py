@@ -73,7 +73,7 @@ class ScoreBox(QLabel):
 
     def get_content(self):
         symbol = "✓" if self.is_good else "✗"
-        return f"{symbol} {self.score}/10"
+        return f"{symbol} {self.score}%"
 
 class AnswerWidget(QWidget):
     def __init__(self, novelty_good=True, novelty_score=0, coherence_good=True, coherence_score=0):
@@ -186,25 +186,25 @@ class MainWindow(QWidget):
         # Answers (Responder)
         answers = [
             {
-                "text": "Japan's Lost Decades were triggered by a combination of excessive debt, asset price collapse, and insufficient policy innovation starting in the early 1990s.",
+                "text": "Japan's Lost Decades were triggered by a combination of excessive debt, asset price collapse, and insufficient monetary policy starting in the early 1990s.",
                 "novelty": True,
-                "novelty_score": 10,
+                "novelty_score": 100,
                 "coherence": True,
-                "coherence_score": 9
+                "coherence_score": 90
             },
             {
-                "text": "Japan's Lost Decades were extended by a failure to promptly restructure the banking sector and implement aggressive monetary policies.",
+                "text": "We can attribute Japan's Lost Decades to an aging demographic and shrinking productive workforce.",
                 "novelty": True,
-                "novelty_score": 4,
+                "novelty_score": 90,
                 "coherence": True,
-                "coherence_score": 7
+                "coherence_score": 95
             },
             {
-                "text": "Japan's Lost Decades were perpetuated by a combination of a shrinking workforce and persistent economic policies that failed to stimulate growth.",
+                "text": "Japan's Lost Decades were perpetuated by a combination of economic perils and persistent economic policies that failed to stimulate growth.",
                 "novelty": False,
-                "novelty_score": 1,
+                "novelty_score": 5,
                 "coherence": True,
-                "coherence_score": 8
+                "coherence_score": 85
             }
         ]
 
